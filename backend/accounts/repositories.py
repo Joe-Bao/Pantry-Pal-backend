@@ -2,18 +2,21 @@ from typing import List
 from werkzeug.security import generate_password_hash, check_password_hash
 
 class User:
-    def __init__(self, username: str, password: str, email: str):
+    def __init__(self, username: str, password: str, email: str, birthday: str):
         self.username = username
         self.password = generate_password_hash(password)
         self.email = email
-
+        self.birthday = birthday
+        self.allergies = []
+        self.diets = []
+        self.intolerances = []
 class UserRepo:
     users: List[User] = []
 
-    def create(self, username: str, password: str, email: str):
+    def create(self, username: str, password: str, email: str, brithday: str):
         if self.user_exists(username):
             raise Exception("User already exists")
-        user = User(username, password, email)
+        user = User(username, password, email, brithday)
         self.users.append(user)
 
     def user_exists(self, username: str) -> bool:
