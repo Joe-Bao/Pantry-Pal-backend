@@ -1,5 +1,5 @@
 # services.py
-from .repositories import UserRepo
+from .repositories import UserRepo, ShoppingListRepo
 from datetime import datetime
 
 class UserService:
@@ -56,7 +56,7 @@ class UserService:
 
         return user
     
-class ListService:
+class ShoppingListService:
     def __init__(self):
         self.list_repo = ShoppingListRepo()
 
