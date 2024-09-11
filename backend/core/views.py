@@ -6,6 +6,8 @@ from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 from .services import UserService
 @csrf_exempt
+
+#User
 def register(request):
     if request.method == 'POST':
         try:
@@ -78,3 +80,7 @@ def user_settings(request):
             return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
+
+#List
+@csrf_exempt
+def create_list(request):

@@ -55,3 +55,42 @@ class UserService:
             user.intolerances = data['intolerances']
 
         return user
+    
+class ListService:
+    def __init__(self):
+        self.list_repo = ShoppingListRepo()
+
+    def create_list(self, listname: str, lid: int): #create
+        if not listname or not lid:
+            raise ValueError("All fields are required")
+        
+        if self.list_repo.list_exists(listname, lid):
+            raise ValueError("User already exists")
+
+        self.list_repo.create(listname, lid)
+        
+    def get_list_info(self, listname: str):
+        list = self.list_repo.get(listname)
+        return {
+            'listname': list.listname,
+            'lid': list.lid,
+        }
+
+    def change_listname(self, listname: str, newname: str):
+        list = self.list_repo.get(listname)
+        keys = self.list_repo.get_names()
+        
+        if newname in keys:
+            raise ValueError("List Already Exist")
+        
+        self.list_repo.change_name(list.lid, newname)
+
+        return {
+            'listname': list.listname,
+            'lid': list.lid,
+        }
+        
+    def delete_list(self, listname: str):
+        list = self.list_repo.get(listname)
+        self.list.remove(list)
+    
