@@ -6,5 +6,3 @@ from django_extensions.db.models import (
 	ActivatorModel,
 	TitleDescriptionModel
 )
-
-
