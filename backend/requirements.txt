@@ -5,9 +5,11 @@ django-filter==22.1
 djangorestframework==3.14.0
 djangorestframework-jsonapi==6.0.0
 inflection==0.5.1
+MarkupSafe==2.1.5
+nanoid==2.0.0
 python-dotenv==0.21.0
 pytz==2022.6
 sqlparse==0.4.3
+typing_extensions==4.12.2
 tzdata==2022.6
-werkzeug==3.0.4
-
+Werkzeug==3.0.4
