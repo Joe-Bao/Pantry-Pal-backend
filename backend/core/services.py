@@ -1,5 +1,5 @@
 # services.py
-from .repositories import UserRepo
+from .repositories import ShoppingListRepo, UserRepo
 from datetime import datetime
 
 class UserService:
@@ -15,7 +15,7 @@ class UserService:
         except ValueError:
             raise ValueError("Invalid birthday format. Use YYYY-MM-DD.")
         
-        if self.user_repo.user_exists(username):
+        if self.user_repo.username_exists(username):
             raise ValueError("User already exists")
 
         self.user_repo.create(username, password, email, birthday)
@@ -28,7 +28,7 @@ class UserService:
             raise ValueError("Incorrect username or password")
 
         # Here, you can add more logic like generating a token or managing sessions
-            return True
+        return True
         
     def get_user_settings(self, username: str):
         user = self.user_repo.get(username)
@@ -60,37 +60,25 @@ class ListService:
     def __init__(self):
         self.list_repo = ShoppingListRepo()
 
-    def create_list(self, listname: str, lid: int): #create
-        if not listname or not lid:
+    def create_list(self, userid: str, name: str): #create
+        if not userid or not name:
             raise ValueError("All fields are required")
-        
-        if self.list_repo.list_exists(listname, lid):
-            raise ValueError("User already exists")
 
-        self.list_repo.create(listname, lid)
+        self.list_repo.create(userid, name)
         
-    def get_list_info(self, listname: str):
-        list = self.list_repo.get(listname)
+    def get_list_info(self, userid: str, listid: str):
+        list = self.list_repo.get(userid, listid)
         return {
-            'listname': list.listname,
-            'lid': list.lid,
+            'name': list.name
         }
 
-    def change_listname(self, listname: str, newname: str):
-        list = self.list_repo.get(listname)
-        keys = self.list_repo.get_names()
-        
-        if newname in keys:
-            raise ValueError("List Already Exist")
-        
-        self.list_repo.change_name(list.lid, newname)
+    def change_listname(self, userid: str, listid: str, newname: str):
+        self.list_repo.change_name(userid, listid, newname)
 
         return {
-            'listname': list.listname,
-            'lid': list.lid,
+            'name': newname,
         }
         
-    def delete_list(self, listname: str):
-        list = self.list_repo.get(listname)
-        self.list.remove(list)
+    def delete_list(self, userid: str, listid: str):
+        self.list_repo.delete(userid, listid)
     
