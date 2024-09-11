@@ -9,7 +9,7 @@ class User:
         self.birthday = birthday
         self.allergies = []
         self.diets = []
-        self.intolerances = []
+        self.intolerances = [] 
 class UserRepo:
     users: List[User] = []
 
