@@ -92,7 +92,7 @@ class ShoppingListAPIView(views.APIView):
     
     def get(self, request):
         user = request.user
-        list_service = ListService()
+        list_service = ShoppingListService()
         if request.method == 'GET':
             try:
                 output = list_service.get_lists(user)
@@ -108,12 +108,23 @@ class ShoppingListAPIView(views.APIView):
     
         
     def patch(self, request):
+        user = request.user
+        list_service = ShoppingListService()
+        if request.method == 'PUT':
+            try:
+                newname = json.loads(request.body)
+                updated_user = list_service.change_listname(user, listid, newname)
+                return JsonResponse({'message': 'User settings updated successfully'}, status=200)
+            except json.JSONDecodeError:
+                return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
+            except Exception as e:
+                return JsonResponse({'error': str(e)}, status=500)
         
-    def delete(self, request):
+   #def delete(self, request):
         
-/lists # return all lists for user -> ShoppingListAPIView
-/lists/<list id> # return list with <list id> for user
-/lists/<list id>/items # returns all items for specific list
-/items/<item id>        
+#/lists # return all lists for user -> ShoppingListAPIView
+#/lists/<list id> # return list with <list id> for user
+#/lists/<list id>/items # returns all items for specific list
+#/items/<item id>        
         
     
