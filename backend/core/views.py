@@ -1,4 +1,3 @@
-from django import views
 from django.shortcuts import render
 import json
 from django.http import JsonResponse
@@ -10,9 +9,9 @@ from rest_framework.parsers import JSONParser
 from rest_framework import views, status
 from rest_framework.response import Response
 
-@csrf_exempt
+
 class UserAPIView(views.APIView):
-    
+    @csrf_exempt
     def register(self, request):
         if request.method == 'POST':
             try:
@@ -87,9 +86,9 @@ class UserAPIView(views.APIView):
                 return JsonResponse({'error': str(e)}, status=500)
 
     
-@csrf_exempt
+
 class ShoppingListAPIView(views.APIView):
-    
+    @csrf_exempt
     def get(self, request):
         user = request.user
         list_service = ListService()
@@ -103,17 +102,5 @@ class ShoppingListAPIView(views.APIView):
                 return JsonResponse({'error': str(e)}, status=400)
             except Exception as e:
                 return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
-
         return JsonResponse({'error': 'Invalid request method'}, status=405)
-    
-        
-    def patch(self, request):
-        
-    def delete(self, request):
-        
-/lists # return all lists for user -> ShoppingListAPIView
-/lists/<list id> # return list with <list id> for user
-/lists/<list id>/items # returns all items for specific list
-/items/<item id>        
-        
     
