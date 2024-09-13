@@ -1,7 +1,8 @@
 from rest_framework import serializers
-from .models import CustomUser
+from .models import ShoppingList, LANGUAGE_CHOICES, STYLE_CHOICES
 
-class CustomUserSerializer(serializers.ModelSerializer):
+
+class ShoppingListSerializer(serializers.ModelSerializer):
     class Meta:
-        model = CustomUser
-        fields = ['id', 'name', 'email', 'birth_date']
+        model = ShoppingList
+        fields = ['id', 'title']

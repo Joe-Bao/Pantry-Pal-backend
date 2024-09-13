@@ -1,18 +1,18 @@
-from django import views
 from django.shortcuts import render
 import json
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
+from rest_framework import viewsets
 from .services import UserService, ShoppingListService
 from rest_framework.parsers import JSONParser
 from rest_framework import views, status
 from rest_framework.response import Response
 
-@csrf_exempt
-class UserAPIView(views.APIView):
-    
+
+class UserViewSet(viewsets.ViewSet):
+    @csrf_exempt
     def register(self, request):
         if request.method == 'POST':
             try:
@@ -87,41 +87,52 @@ class UserAPIView(views.APIView):
                 return JsonResponse({'error': str(e)}, status=500)
 
     
-@csrf_exempt
-class ShoppingListAPIView(views.APIView):
+#/lists 
+@login_required  # Requires user to be logged in
+@require_http_methods(["GET", "DELETE"])  # Restricts to GET and DELETE requests only
+class ShoppingList(views.APIView):
     
-    def get(self, request):
+    def shoppinglists(self, request):
         user = request.user
         list_service = ShoppingListService()
         if request.method == 'GET':
             try:
-                output = list_service.get_lists(user)
+                output = list_service.get_all_lists(user)
                 return JsonResponse(output, status=200)
-            except json.JSONDecodeError as e:
-                return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
             except ValueError as e:
                 return JsonResponse({'error': str(e)}, status=400)
-            except Exception as e:
-                return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
-
-        return JsonResponse({'error': 'Invalid request method'}, status=405)
-    
         
-    def patch(self, request):
-        user = request.user
-        list_service = ShoppingListService()
-        if request.method == 'PUT':
+        elif request.method == 'DELETE':
             try:
-                newname = json.loads(request.body)
-                updated_user = list_service.change_listname(user, listid, newname)
-                return JsonResponse({'message': 'User settings updated successfully'}, status=200)
-            except json.JSONDecodeError:
+                list_service.delete_all(user)
+                return JsonResponse({'message': 'Delete all lists successfully'}, status=200)
+            except json.JSONDecodeError as e:
                 return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
             except Exception as e:
-                return JsonResponse({'error': str(e)}, status=500)
+                return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+            
+#lists/<list id>
+@login_required  # Requires user to be logged in
+class ListDetail(views.APIView):
+    """
+    Retrieve, update or delete a snippet instance.
+    """
+    
+    def get(self, request, listid):
+        user = request.user
+        list = list_service.get_list(listid)
         
-   #def delete(self, request):
         
+        
+    def put(self, request):
+        
+    def post(self, request):
+        
+    def delete(self, request):
+        
+
+            
 #/lists # return all lists for user -> ShoppingListAPIView
 #/lists/<list id> # return list with <list id> for user
 #/lists/<list id>/items # returns all items for specific list
