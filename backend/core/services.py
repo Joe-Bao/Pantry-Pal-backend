@@ -83,7 +83,7 @@ class ShoppingListService:
     def delete_list(self, userid: str, listid: str):
         self.list_repo.delete(userid, listid)
 
-    def get_all_recipes(self, userid: str):
+    def get_all_lists(self, userid: str):
         return self.list_repo.get_all(userid)
 
 class RecipeService:
