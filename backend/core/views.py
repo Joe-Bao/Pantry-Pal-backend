@@ -16,7 +16,6 @@ class UserViewSet(viewsets.ViewSet):
     def register(self, request):
         if request.method == 'POST':
             try:
-                
                 # Parse JSON body
                 data = json.loads(request.body)
                 username = data.get('username')
