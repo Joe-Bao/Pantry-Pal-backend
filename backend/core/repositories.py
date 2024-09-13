@@ -3,7 +3,7 @@ from enum import Enum
 from typing import List, Dict
 from werkzeug.security import generate_password_hash, check_password_hash
 from .utils import GetCurrentTimeInSeconds
-from .globals import DB_PREFIX_USER, DB_PREFIX_SHOPPING_LIST
+from .globals import DB_PREFIX_USER, DB_PREFIX_SHOPPING_LIST, DB_PREFIX_RECIPE, DB_PREFIX_ITEM
 from nanoid import generate
 
 class GenericModel:
