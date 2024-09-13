@@ -1,6 +1,6 @@
 import time
 
-from backend.core.globals import DB_PREFIX_RECIPE, DB_PREFIX_SHOPPING_LIST, DB_PREFIX_USER, ItemType
+from .globals import DB_PREFIX_RECIPE, DB_PREFIX_SHOPPING_LIST, DB_PREFIX_USER, ItemType
 
 def KeyToId(key: str) -> str:
     return key.split("#")[1]

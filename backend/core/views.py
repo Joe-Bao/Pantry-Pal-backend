@@ -15,7 +15,6 @@ class UserAPIView(views.APIView):
     def register(self, request):
         if request.method == 'POST':
             try:
-                
                 # Parse JSON body
                 data = json.loads(request.body)
                 username = data.get('username')
@@ -91,7 +90,7 @@ class ShoppingListAPIView(views.APIView):
     @csrf_exempt
     def get(self, request):
         user = request.user
-        list_service = ListService()
+        list_service = ShoppingListService()
         if request.method == 'GET':
             try:
                 output = list_service.get_lists(user)
