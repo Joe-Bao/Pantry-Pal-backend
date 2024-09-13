@@ -119,7 +119,10 @@ class ShoppingListRepo(GenenericRepo):
                 self.lists.remove(l)
                 return
         raise Exception("List not found")
-
+    
+    def get_all(self, uid: str):
+        PK = DB_PREFIX_USER + uid
+        return [r for r in self.lists if r.PK == PK]
 
 class Recipe(GenenericRepo):
     def __init__(self, userid: str, name: str, instructions: List[str], servings: int):
