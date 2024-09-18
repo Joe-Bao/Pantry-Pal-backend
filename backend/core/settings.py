@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     'django_filters', #Used with DRF
     'rest_framework', #DRF package
     'core', # New app
-    #'drf_spectacular', #drf_spectacular
+    'drf_spectacular', #drf_spectacular
     
 ]
 
@@ -151,5 +151,14 @@ REST_FRAMEWORK = {
     'TEST_REQUEST_RENDERER_CLASSES': (
         'rest_framework_json_api.renderers.JSONRenderer',
     ),
-    'TEST_REQUEST_DEFAULT_FORMAT': 'vnd.api+json'
+    'TEST_REQUEST_DEFAULT_FORMAT': 'vnd.api+json',
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Waste Warriors API',
+    'DESCRIPTION': 'API for mobile app',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    # OTHER SETTINGS
 }

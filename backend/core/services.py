@@ -1,5 +1,5 @@
 # services.py
-from .repositories import ShoppingListRepo, UserRepo, RecipeRepo, ItemRepo, ItemType
+from .repositories import ShoppingList, ShoppingListRepo, User, UserRepo, RecipeRepo, ItemRepo, ItemType
 from datetime import datetime
 from typing import List
 
@@ -19,72 +19,54 @@ class UserService:
         if self.user_repo.username_exists(username):
             raise ValueError("User already exists")
 
-        self.user_repo.create(username, password, email, birthday)
+        return self.user_repo.create(username, password, email, birthday)
 
-    def login_user(self, username: str, password: str):
+    def login_user(self, username: str, password: str) -> User:
         if not username or not password:
             raise ValueError("Username and password are required")
 
-        if not self.user_repo.authenticate_user(username, password):
+        user = self.user_repo.authenticate_user(username, password)
+        if user is None:
             raise ValueError("Incorrect username or password")
 
         # Here, you can add more logic like generating a token or managing sessions
-        return True
-        
-    def get_user_settings(self, username: str):
-        user = self.user_repo.get(username)
-        return {
-            'username': user.username,
-            'email': user.email,
-            'birthday': user.birthday,
-            'allergies': user.allergies,
-            'diets': user.diets,
-            'intolerances': user.intolerances,
-        }
-
-    def update_user_settings(self, username: str, data: dict):
-        user = self.user_repo.get(username)
-        if 'email' in data:
-            user.email = data['email']
-        if 'birthday' in data:
-            user.birthday = data['birthday']
-        if 'allergies' in data:
-            user.allergies = data['allergies']
-        if 'diets' in data:
-            user.diets = data['diets']
-        if 'intolerances' in data:
-            user.intolerances = data['intolerances']
-
         return user
+        
+    def get_user(self, id: str) -> User:
+        return self.user_repo.get(id)
+
+    def update_user_settings(self, id: str, data: dict) -> User:
+        if 'username' in data:
+            raise ValueError("Username cannot be changed")
+        
+        return self.user_repo.update(id, data)
     
 class ShoppingListService:
     def __init__(self):
         self.list_repo = ShoppingListRepo()
 
-    def create_list(self, userid: str, name: str): #create
+    def create_list(self, userid: str, name: str) -> ShoppingList: #create
         if not userid or not name:
             raise ValueError("All fields are required")
 
-        self.list_repo.create(userid, name)
+        return self.list_repo.create(userid, name)
         
-    def get_list_info(self, userid: str, listid: str):
-        list = self.list_repo.get(userid, listid)
-        return {
-            'name': list.name
-        }
+    def get_list_info(self, userid: str, listid: str) -> ShoppingList:
+        return self.list_repo.get(userid, listid)
 
-    def change_listname(self, userid: str, listid: str, newname: str):
-        self.list_repo.change_name(userid, listid, newname)
-
-        return {
-            'name': newname,
-        }
+    def change_listname(self, userid: str, listid: str, name: str) -> ShoppingList:
+        return self.list_repo.change_name(userid, listid, name)
         
     def delete_list(self, userid: str, listid: str):
         self.list_repo.delete(userid, listid)
 
-    def get_all_lists(self, userid: str):
+    def delete_all_lists(self, userid: str):
+        self.list_repo.delete_all(userid)
+
+    def get_all_lists(self, userid: str) -> List[ShoppingList]:
         return self.list_repo.get_all(userid)
+
+# Services below may still need editing to work with views
 
 class RecipeService:
     def __init__(self):

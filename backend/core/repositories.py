@@ -70,7 +70,7 @@ class UserRepo(GenenericRepo):
             ExpressionAttributeNames={"#username": "username"},
             ExpressionAttributeValues={":username": username}
         )
-        if "Items" not in resp:
+        if "Items" not in resp or len(resp["Items"]) == 0:
             raise TypeError("User not found")
         return User(**resp["Items"][0])
     
@@ -88,7 +88,7 @@ class UserRepo(GenenericRepo):
         except TypeError:
             return False
     
-    def create(self, username: str, password: str, email: str, birthday: str):
+    def create(self, username: str, password: str, email: str, birthday: str) -> User:
         id = generate()
         PK = DB_PREFIX_USER + id
         SK = DB_PREFIX_USER + id
@@ -97,12 +97,39 @@ class UserRepo(GenenericRepo):
         user = User(PK, SK, username, hashed_password, email, birthday)
         db_table.put_item(Item=vars(user))
 
-    def authenticate_user(self, username: str, password: str) -> bool:
+        return user
+
+    def authenticate_user(self, username: str, password: str) -> User:
         try:
             user = self.get_by_username(username)
-            return check_password_hash(user.password, password)
+            if check_password_hash(user.password, password):
+                return user
+            return None
         except TypeError:
-            return False
+            return None
+        
+    def update(self, id: str, data: dict) -> User:
+        PK = DB_PREFIX_USER + id
+
+        now = GetCurrentTimeInSeconds()
+        UpdateExpression="SET #modifiedAt = :modifiedAt"
+        ExpressionAttributeNames={"#modifiedAt": "modifiedAt"}
+        ExpressionAttributeValues={":modifiedAt": now}
+
+        for key in data:
+            UpdateExpression += f", #{key} = :{key}"
+            ExpressionAttributeNames["#" + key] = key
+            ExpressionAttributeValues[":" + key] = data[key]
+        
+        resp = db_table.update_item(
+            Key={"PK": PK, "SK": PK},
+            UpdateExpression=UpdateExpression,
+            ExpressionAttributeNames=ExpressionAttributeNames,
+            ExpressionAttributeValues=ExpressionAttributeValues,
+            ReturnValues="ALL_NEW"
+        )
+
+        return User(**resp["Attributes"])
 
 
 class ShoppingList(GenericModel):
@@ -119,17 +146,17 @@ class ShoppingList(GenericModel):
         self.name = name
 
 class ShoppingListRepo(GenenericRepo):
-    def get(self, uid: str, lid: str) -> List:
+    def get(self, uid: str, lid: str) -> ShoppingList:
         PK = DB_PREFIX_USER + uid
         SK = DB_PREFIX_SHOPPING_LIST + lid
         resp = db_table.get_item(
             Key={"PK": PK, "SK": SK},
         )
-        if "Item" not in resp:
+        if "Item" not in resp or len(resp["Item"]) == 0:
             raise TypeError("List not found")
         return ShoppingList(**resp["Item"])
     
-    def get_all(self, uid: str):
+    def get_all(self, uid: str) -> List[ShoppingList]:
         PK = DB_PREFIX_USER + uid
         SK = DB_PREFIX_SHOPPING_LIST
         resp = db_table.query(
@@ -146,15 +173,17 @@ class ShoppingListRepo(GenenericRepo):
         except TypeError:
             return False
     
-    def create(self, name: str):
+    def create(self, userId: str, name: str) -> ShoppingList:
         id = generate()
-        PK = DB_PREFIX_USER + id
+        PK = DB_PREFIX_USER + userId
         SK = DB_PREFIX_SHOPPING_LIST + id
         
         list = ShoppingList(PK, SK, name)
         db_table.put_item(Item=vars(list))
 
-    def change_name(self, uid: str, lid: str, new_name: str):
+        return list
+
+    def change_name(self, uid: str, lid: str, new_name: str) -> ShoppingList:
         PK = DB_PREFIX_USER + uid
         SK = DB_PREFIX_SHOPPING_LIST + lid
         
@@ -164,6 +193,8 @@ class ShoppingListRepo(GenenericRepo):
             ExpressionAttributeNames={"#name": "name"},
             ExpressionAttributeValues={":name": new_name}
         )
+
+        return ShoppingList(PK, SK, new_name)
 
     def delete(self, uid: str, lid: str):
         PK = DB_PREFIX_USER + uid
@@ -210,7 +241,7 @@ class RecipeRepo(GenenericRepo):
         resp = db_table.get_item(
             Key={"PK": PK, "SK": SK},
         )
-        if "Item" not in resp:
+        if "Item" not in resp or len(resp["Item"]) == 0:
             raise TypeError("Recipe not found")
         return Recipe(**resp["Item"])
     
@@ -276,7 +307,7 @@ class ItemRepo(GenenericRepo):
         resp = db_table.get_item(
             Key={"PK": PK, "SK": SK},
         )
-        if "Item" not in resp:
+        if "Item" not in resp or len(resp["Item"]) == 0:
             raise TypeError("Item not found")
         return Item(**resp["Item"])
     

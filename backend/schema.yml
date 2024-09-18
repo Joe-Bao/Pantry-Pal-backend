@@ -1,0 +1,1053 @@
+openapi: 3.0.3
+info:
+  title: Waste Warriors API
+  version: 1.0.0
+  description: API for mobile app
+paths:
+  /users/{userId}/:
+    get:
+      operationId: get_user
+      parameters:
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    patch:
+      operationId: patch_user
+      parameters:
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      requestBody:
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserInfoPatch'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /users/{userId}/items/:
+    get:
+      operationId: get_all_user_items
+      parameters:
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.api+json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Item'
+          description: ''
+    put:
+      operationId: create_user_item
+      parameters:
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      requestBody:
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: '#/components/schemas/ItemCreate'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Item'
+          description: ''
+  /users/{userId}/items/{itemId}/:
+    get:
+      operationId: get_user_item
+      parameters:
+      - in: path
+        name: itemId
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Item'
+          description: ''
+    patch:
+      operationId: patch_user_item
+      parameters:
+      - in: path
+        name: itemId
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      requestBody:
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: '#/components/schemas/PatchedItemPatch'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Item'
+          description: ''
+    delete:
+      operationId: delete_user_item
+      parameters:
+      - in: path
+        name: itemId
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /users/{userId}/lists/:
+    get:
+      operationId: get_all_user_lists
+      parameters:
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.api+json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ShoppingList'
+          description: ''
+    put:
+      operationId: create_user_list
+      parameters:
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      requestBody:
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: '#/components/schemas/ShoppingListCreate'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ShoppingList'
+          description: ''
+    delete:
+      operationId: delete_all_user_lists
+      parameters:
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /users/{userId}/lists/{listId}/:
+    get:
+      operationId: get_user_list
+      parameters:
+      - in: path
+        name: listId
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ShoppingList'
+          description: ''
+    patch:
+      operationId: patch_user_list
+      parameters:
+      - in: path
+        name: listId
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      requestBody:
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: '#/components/schemas/PatchedShoppingListPatch'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/ShoppingList'
+          description: ''
+    delete:
+      operationId: delete_user_list
+      parameters:
+      - in: path
+        name: listId
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /users/{userId}/lists/{listId}/items/:
+    get:
+      operationId: get_all_list_items
+      parameters:
+      - in: path
+        name: listId
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.api+json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Item'
+          description: ''
+    put:
+      operationId: create_list_item
+      parameters:
+      - in: path
+        name: listId
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      requestBody:
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: '#/components/schemas/ItemCreate'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Item'
+          description: ''
+  /users/{userId}/lists/{listId}/items/{itemId}/:
+    get:
+      operationId: get_list_item
+      parameters:
+      - in: path
+        name: itemId
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: listId
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Item'
+          description: ''
+    patch:
+      operationId: patch_list_item
+      parameters:
+      - in: path
+        name: itemId
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: listId
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      requestBody:
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: '#/components/schemas/PatchedItemPatch'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Item'
+          description: ''
+    delete:
+      operationId: delete_list_item
+      parameters:
+      - in: path
+        name: itemId
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: listId
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /users/{userId}/recipes/:
+    get:
+      operationId: get_all_user_recipes
+      parameters:
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.api+json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Recipe'
+          description: ''
+    put:
+      operationId: create_user_recipe
+      parameters:
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      requestBody:
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: '#/components/schemas/RecipeCreate'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Recipe'
+          description: ''
+  /users/{userId}/recipes/{recipeId}/:
+    get:
+      operationId: get_user_recipe
+      parameters:
+      - in: path
+        name: recipeId
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Recipe'
+          description: ''
+    delete:
+      operationId: delete_user_recipe
+      parameters:
+      - in: path
+        name: recipeId
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /users/{userId}/recipes/{recipeId}/items/:
+    get:
+      operationId: get_all_recipe_items
+      parameters:
+      - in: path
+        name: recipeId
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.api+json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Item'
+          description: ''
+    put:
+      operationId: create_recipe_item
+      parameters:
+      - in: path
+        name: recipeId
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      requestBody:
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: '#/components/schemas/ItemCreate'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Item'
+          description: ''
+  /users/{userId}/recipes/{recipeId}/items/{itemId}/:
+    get:
+      operationId: get_recipe_item
+      parameters:
+      - in: path
+        name: itemId
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: recipeId
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Item'
+          description: ''
+    patch:
+      operationId: patch_recipe_item
+      parameters:
+      - in: path
+        name: itemId
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: recipeId
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      requestBody:
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: '#/components/schemas/PatchedItemPatch'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Item'
+          description: ''
+    delete:
+      operationId: delete_recipe_item
+      parameters:
+      - in: path
+        name: itemId
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: recipeId
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /users/login/:
+    post:
+      operationId: login_user
+      tags:
+      - users
+      requestBody:
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: '#/components/schemas/UserLogin'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /users/register/:
+    post:
+      operationId: register_user
+      tags:
+      - users
+      requestBody:
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: '#/components/schemas/UserRegister'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+components:
+  schemas:
+    Item:
+      type: object
+      properties:
+        PK:
+          type: string
+        SK:
+          type: string
+        name:
+          type: string
+          maxLength: 100
+        quantity:
+          type: number
+          format: double
+        unit:
+          type: string
+          maxLength: 100
+        price:
+          type: number
+          format: double
+        expiresAt:
+          type: integer
+        createdAt:
+          type: integer
+        modifiedAt:
+          type: integer
+      required:
+      - PK
+      - SK
+      - createdAt
+      - expiresAt
+      - modifiedAt
+      - name
+      - price
+      - quantity
+      - unit
+    ItemCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        quantity:
+          type: number
+          format: double
+        unit:
+          type: string
+          maxLength: 100
+        price:
+          type: number
+          format: double
+        expiresAt:
+          type: integer
+      required:
+      - expiresAt
+      - name
+      - price
+      - quantity
+      - unit
+    PatchedItemPatch:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        quantity:
+          type: number
+          format: double
+        unit:
+          type: string
+          maxLength: 100
+        price:
+          type: number
+          format: double
+        expiresAt:
+          type: integer
+    PatchedShoppingListPatch:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+    PatchedUserInfoPatch:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 100
+        allergies:
+          type: array
+          items:
+            type: string
+        diets:
+          type: array
+          items:
+            type: string
+        intolerances:
+          type: array
+          items:
+            type: string
+    Recipe:
+      type: object
+      properties:
+        PK:
+          type: string
+        SK:
+          type: string
+        name:
+          type: string
+          maxLength: 100
+        instructions:
+          type: array
+          items:
+            type: string
+        servings:
+          type: integer
+        createdAt:
+          type: integer
+        modifiedAt:
+          type: integer
+      required:
+      - PK
+      - SK
+      - createdAt
+      - instructions
+      - modifiedAt
+      - name
+      - servings
+    RecipeCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        instructions:
+          type: array
+          items:
+            type: string
+        servings:
+          type: integer
+      required:
+      - instructions
+      - name
+      - servings
+    ShoppingList:
+      type: object
+      properties:
+        PK:
+          type: string
+        SK:
+          type: string
+        name:
+          type: string
+          maxLength: 100
+        createdAt:
+          type: integer
+        modifiedAt:
+          type: integer
+      required:
+      - PK
+      - SK
+      - createdAt
+      - modifiedAt
+      - name
+    ShoppingListCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+      required:
+      - name
+    User:
+      type: object
+      properties:
+        PK:
+          type: string
+        SK:
+          type: string
+        username:
+          type: string
+          maxLength: 100
+        password:
+          type: string
+          readOnly: true
+          maxLength: 255
+        email:
+          type: string
+          format: email
+          maxLength: 100
+        birthday:
+          type: string
+          maxLength: 10
+        allergies:
+          type: array
+          items:
+            type: string
+        diets:
+          type: array
+          items:
+            type: string
+        intolerances:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: integer
+        modifiedAt:
+          type: integer
+      required:
+      - PK
+      - SK
+      - allergies
+      - birthday
+      - createdAt
+      - diets
+      - email
+      - intolerances
+      - modifiedAt
+      - password
+      - username
+    UserLogin:
+      type: object
+      properties:
+        username:
+          type: string
+          maxLength: 100
+        password:
+          type: string
+          maxLength: 255
+      required:
+      - password
+      - username
+    UserRegister:
+      type: object
+      properties:
+        username:
+          type: string
+          maxLength: 100
+        email:
+          type: string
+          format: email
+          maxLength: 100
+        birthday:
+          type: string
+          maxLength: 10
+        password:
+          type: string
+          maxLength: 255
+      required:
+      - birthday
+      - email
+      - password
+      - username
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
