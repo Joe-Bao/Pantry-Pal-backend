@@ -492,7 +492,7 @@ class ItemViewSet(viewsets.ViewSet):
         request=ItemCreateSerializer,
         responses=ItemSerializer
     )
-    def create_list_item(self, request, listId):
+    def create_list_item(self, request, userId , listId):
         if request.method == 'POST':
             try:
                 # Parse JSON body
@@ -530,7 +530,7 @@ class ItemViewSet(viewsets.ViewSet):
         request=ItemCreateSerializer,
         responses=ItemSerializer
     )
-    def create_recipe_item(self, request, recipeId):
+    def create_recipe_item(self, request, userId, recipeId):
         if request.method == 'POST':
             try:
                 # Parse JSON body
@@ -593,9 +593,10 @@ class ItemViewSet(viewsets.ViewSet):
         operation_id='get_all_list_items',
         responses=ItemSerializer(many=True)
     )
-    def get_all_list_items(self, request, listId):
+    def get_all_list_items(self, request, userId, listId):
         if request.method == 'GET':
             try:
+                print("test1")
                 # Use ItemService to fetch all items for the user
                 item_service = ItemService()  # Assuming ItemService handles item-related operations
                 items = item_service.get_all_items('list', listId)  # Fetch all items for the user
@@ -619,7 +620,7 @@ class ItemViewSet(viewsets.ViewSet):
         operation_id='get_all_recipe_items',
         responses=ItemSerializer(many=True)
     )
-    def get_all_recipe_items(self, request, recipeId):
+    def get_all_recipe_items(self, request, userId, recipeId):
         if request.method == 'GET':
             try:
                 # Use ItemService to fetch all items for the user
@@ -671,7 +672,7 @@ class ItemViewSet(viewsets.ViewSet):
         operation_id='get_list_item',
         responses=ItemSerializer
     )
-    def get_list_item(self, request, listId, itemId):
+    def get_list_item(self, request, userId, listId, itemId):
         if request.method == 'GET':
             try:
                 # Use ItemService to fetch the item information based on userId and itemId
@@ -698,7 +699,7 @@ class ItemViewSet(viewsets.ViewSet):
         operation_id='get_recipe_item',
         responses=ItemSerializer
     )
-    def get_recipe_item(self, request, recipeId, itemId):
+    def get_recipe_item(self, request, userId, recipeId, itemId):
         if request.method == 'GET':
             try:
                 # Use ItemService to fetch the item information based on userId and itemId
@@ -764,7 +765,7 @@ class ItemViewSet(viewsets.ViewSet):
         request=ItemPatchSerializer,
         responses=ItemSerializer
     )
-    def patch_list_item(self, request, listId, itemId):
+    def patch_list_item(self, request, userId, listId, itemId):
         if request.method == 'PATCH':
             try:
                 # Parse JSON body
@@ -802,7 +803,7 @@ class ItemViewSet(viewsets.ViewSet):
         request=ItemPatchSerializer,
         responses=ItemSerializer
     )
-    def patch_recipe_item(self, request, recipeId, itemId):
+    def patch_recipe_item(self, request, userId, recipeId, itemId):
         if request.method == 'PATCH':
             try:
                 # Parse JSON body
@@ -858,7 +859,7 @@ class ItemViewSet(viewsets.ViewSet):
         operation_id='delete_list_item',
         responses=None
     )
-    def delete_list_item(self, request, listId, itemId):
+    def delete_list_item(self, request, userId, listId, itemId):
         if request.method == 'DELETE':
             try:
                 item_service = ItemService()  # Use the ItemService to manage items
@@ -877,7 +878,7 @@ class ItemViewSet(viewsets.ViewSet):
         operation_id='delete_recipe_item',
         responses=None
     )
-    def delete_recipe_item(self, request, recipeId, itemId):
+    def delete_recipe_item(self, request, userId, recipeId, itemId):
         if request.method == 'DELETE':
             try:
                 item_service = ItemService()  # Use the ItemService to manage items

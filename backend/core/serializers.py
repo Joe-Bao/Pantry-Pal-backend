@@ -106,9 +106,9 @@ item_fields = {
     'PK': serializers.CharField(),
     'SK': serializers.CharField(),
     'name': serializers.CharField(max_length=100),
-    'quantity': serializers.FloatField(),
+    'quantity': serializers.DecimalField(max_digits=10, decimal_places=2),#cannot be float
     'unit': serializers.CharField(max_length=100),
-    'price': serializers.FloatField(),
+    'price': serializers.DecimalField(max_digits=10, decimal_places=2),
     'expiresAt': serializers.IntegerField(),
     'createdAt': serializers.IntegerField(),
     'modifiedAt': serializers.IntegerField()

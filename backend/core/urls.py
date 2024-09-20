@@ -20,7 +20,7 @@ urlpatterns = [
     # shopping list urls
     path(
         'users/<str:userId>/lists/',
-        ShoppingListViewSet.as_view({ 'get': 'get_all_user_lists', 'put': 'create_user_list', 'delete': 'delete_all_user_lists' }),
+        ShoppingListViewSet.as_view({ 'get': 'get_all_user_lists', 'post': 'create_user_list', 'delete': 'delete_all_user_lists' }),
     ),
     path(
         'users/<str:userId>/lists/<str:listId>/',
@@ -29,24 +29,30 @@ urlpatterns = [
     # recipe urls
     path(
         'users/<str:userId>/recipes/',
-        RecipeViewSet.as_view({ 'get': 'get_all_user_recipes', 'put': 'create_user_recipe' })
+        RecipeViewSet.as_view({'get': 'get_all_user_recipes', 'post': 'create_user_recipe'})
     ),
+    
+    # Get, update (PATCH), or delete a specific user recipe
     path(
         'users/<str:userId>/recipes/<str:recipeId>/',
-        RecipeViewSet.as_view({ 'get': 'get_user_recipe', 'delete': 'delete_user_recipe' })
+        RecipeViewSet.as_view({
+            'get': 'get_user_recipe',
+            'patch': 'patch_recipe',
+            'delete': 'delete_user_recipe'
+        })
     ),
     # item urls
     path(
         'users/<str:userId>/lists/<str:listId>/items/',
-        ItemViewSet.as_view({ 'get':'get_all_list_items', 'put': 'create_list_item' })
+        ItemViewSet.as_view({ 'get':'get_all_list_items', 'post': 'create_list_item' })
     ),
     path(
         'users/<str:userId>/recipes/<str:recipeId>/items/',
-        ItemViewSet.as_view({ 'get':'get_all_recipe_items', 'put': 'create_recipe_item' })
+        ItemViewSet.as_view({ 'get':'get_all_recipe_items', 'post': 'create_recipe_item' })
     ),
     path(
         'users/<str:userId>/items/',
-        ItemViewSet.as_view({ 'get':'get_all_user_items', 'put': 'create_user_item' })
+        ItemViewSet.as_view({ 'get':'get_all_user_items', 'post': 'create_user_item' })
     ),
     path(
         'users/<str:userId>/lists/<str:listId>/items/<str:itemId>/',

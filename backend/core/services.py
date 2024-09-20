@@ -119,8 +119,8 @@ class ItemService:
         # Update the item using the repository method
         return self.item_repo.update(ItemType, pkId, itemId, data)
     
-    def delete_item(self, type: ItemType, userid: str, itemid: str):
-        self.item_repo.delete(type, userid, itemid)
+    def delete_item(self, type: ItemType, pkId: str, itemid: str):
+        self.item_repo.delete(type, pkId, itemid)
 
-    def get_all_items(self, ItemType, userid: str) -> List[Item]:
-        return self.item_repo.get_all(ItemType, userid)
+    def get_all_items(self, ItemType, pkId: str) -> List[Item]:
+        return self.item_repo.get_all(ItemType, pkId)
