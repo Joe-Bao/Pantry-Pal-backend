@@ -1,5 +1,5 @@
 # services.py
-from .repositories import ShoppingList, ShoppingListRepo, User, UserRepo, RecipeRepo, ItemRepo, ItemType
+from .repositories import ShoppingList, ShoppingListRepo, User, UserRepo, RecipeRepo, Recipe, ItemRepo, Item, ItemType
 from datetime import datetime
 from typing import List
 
@@ -7,7 +7,7 @@ class UserService:
     def __init__(self):
         self.user_repo = UserRepo()
 
-    def register_user(self, username: str, password: str, email: str, birthday: str):
+    def register_user(self, username: str, password: str, email: str, birthday: str) -> User:
         if not username or not password or not email or not birthday:
             raise ValueError("All fields are required")
 
@@ -72,37 +72,20 @@ class RecipeService:
     def __init__(self):
         self.recipe_repo = RecipeRepo()
 
-    def create_recipe(self, userid: str, name: str, instructions: List[str], servings: int):
+    def create_recipe(self, userid: str, name: str, instructions: List[str], servings: int) -> Recipe:
         if not userid or not name or not instructions or servings <= 0:
             raise ValueError("All fields are required and servings must be positive")
 
         if self.recipe_repo.recipe_exists(userid, name):
             raise ValueError("Recipe with this name already exists")
 
-        self.recipe_repo.create(name, instructions, servings)
+        return self.recipe_repo.create(name, instructions, servings)
     
-    def get_recipe_info(self, userid: str, recipeid: str):
-        recipe = self.recipe_repo.get(userid, recipeid)
-        return {
-            'name': recipe.name,
-            'instructions': recipe.instructions,
-            'servings': recipe.servings
-        }
+    def get_recipe_info(self, userid: str, recipeid: str) -> Recipe:
+        return self.recipe_repo.get(userid, recipeid)
 
-    def change_recipe_name(self, userid: str, recipeid: str, newname: str):
-        recipe = self.recipe_repo.get(userid, recipeid)
-        if not recipe:
-            raise Exception("Recipe not found")
-
-        if self.recipe_repo.recipe_exists(userid, newname):
-            raise ValueError("Recipe with this new name already exists")
-
-        self.recipe_repo.delete(userid, recipeid)
-        self.recipe_repo.create(newname, recipe.instructions, recipe.servings)
-
-        return {
-            'name': newname,
-        }
+    def update_recipe(self, userid: str, recipe_id: str, data: dict) -> Recipe:
+        return self.recipe_repo.update(userid, recipe_id, data)
         
     def delete_recipe(self, userid: str, recipeid: str):
         if not self.recipe_repo.recipe_exists(userid, recipeid):
@@ -110,7 +93,7 @@ class RecipeService:
 
         self.recipe_repo.delete(userid, recipeid)
     
-    def get_all_recipes(self, userid: str):
+    def get_all_recipes(self, userid: str) -> List[Recipe]:
         return self.recipe_repo.get_all(userid)
 
 
@@ -118,45 +101,26 @@ class ItemService:
     def __init__(self):
         self.item_repo = ItemRepo()
 
-    def create_item(self, type: ItemType, userid: str, name: str, quantity: int, unit: str, price: float, expiresAt: int):
-        if not userid or not name or quantity < 0 or price < 0 or expiresAt < 0:
+    def create_item(self, type: ItemType, pkid: str, name: str, quantity: int, unit: str, price: float, expiresAt: int) -> Item:
+        if not pkid or not name or quantity < 0 or price < 0 or expiresAt < 0:
             raise ValueError("All fields are required and must be valid")
 
-        self.item_repo.create(type, name, quantity, unit, price, expiresAt)
+        return self.item_repo.create(type, pkid, name, quantity, unit, price, expiresAt)
     
-    def get_item_info(self, type: ItemType, userid: str, itemid: str):
-        item = self.item_repo.get(type, userid, itemid)
-        return {
-            'name': item.name,
-            'quantity': item.quantity,
-            'unit': item.unit,
-            'price': item.price,
-            'expiresAt': item.expiresAt
-        }
+    def get_item_info(self, type: ItemType, pkid: str, itemid: str) -> Item:
+        return self.item_repo.get(type, pkid, itemid)
 
-    def update_item(self, type: ItemType, userid: str, itemid: str, name: str = None, quantity: int = None, unit: str = None, price: float = None, expiresAt: int = None):
-        item = self.item_repo.get(type, userid, itemid)
-        
-        if name is not None:
-            item.name = name
-        if quantity is not None:
-            item.quantity = quantity
-        if unit is not None:
-            item.unit = unit
-        if price is not None:
-            item.price = price
-        if expiresAt is not None:
-            item.expiresAt = expiresAt
-        
-        # Assuming the repo reflects changes directly, otherwise you would need to update the repo here.
 
-        return {
-            'name': item.name,
-            'quantity': item.quantity,
-            'unit': item.unit,
-            'price': item.price,
-            'expiresAt': item.expiresAt
-        }
+    def update_item(self,type: ItemType, pkId: str, itemId: str, data: dict) -> Item:
+        # Validate that the item exists
+        if not self.item_repo.item_exists(type, pkId, itemId):
+            raise ValueError("Item not found")
+
+        # Update the item using the repository method
+        return self.item_repo.update(ItemType, pkId, itemId, data)
     
     def delete_item(self, type: ItemType, userid: str, itemid: str):
         self.item_repo.delete(type, userid, itemid)
+
+    def get_all_items(self, ItemType, userid: str) -> List[Item]:
+        return self.item_repo.get_all(ItemType, userid)

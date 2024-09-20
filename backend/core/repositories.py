@@ -269,7 +269,6 @@ class RecipeRepo(GenenericRepo):
         
         recipe = Recipe(PK, SK, name, instructions, servings)
         db_table.put_item(Item=vars(recipe))
-
         return recipe
     
     def update(self, uid: str, rid: str, data: dict) -> Recipe:
@@ -361,6 +360,7 @@ class ItemRepo(GenenericRepo):
 
         item = Item(PK, SK, name, quantity, unit, price, expiresAt)
         db_table.put_item(Item=vars(item))
+        return item
 
     def update(self, ItemType: ItemType, pkid: str, skid: str, data: dict) -> Item:
         PK = ItemTypePrefix(ItemType) + pkid

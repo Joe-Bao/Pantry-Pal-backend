@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 from rest_framework import viewsets
 from .serializers import ItemCreateSerializer, ItemPatchSerializer, ItemSerializer, RecipeCreateSerializer, RecipePatchSerializer, RecipeSerializer, ShoppingListCreateSerializer, ShoppingListPatchSerializer, ShoppingListSerializer, UserInfoPatchSerializer, UserLoginSerializer, UserRegisterSerializer, UserSerializer
-from .services import UserService, ShoppingListService
+from .services import UserService, ShoppingListService, RecipeService, ItemService
 from rest_framework.parsers import JSONParser
 from rest_framework import views, status
 from rest_framework.response import Response
@@ -158,7 +158,7 @@ class ShoppingListViewSet(viewsets.ViewSet):
         responses=ShoppingListSerializer
     )
     def create_user_list(self, request, userId):
-        if request.method == 'PUT':
+        if request.method == 'POST':
             try:
                 # Parse JSON body
                 data = json.loads(request.body)
@@ -314,7 +314,36 @@ class RecipeViewSet(viewsets.ViewSet):
         responses=RecipeSerializer
     )
     def create_user_recipe(self, request, userId):
-        pass
+        if request.method == 'POST':
+            try:
+                # Parse JSON body
+                data = json.loads(request.body)
+
+                # Validate fields
+                req_serializer = RecipeCreateSerializer(data=data)
+                if not req_serializer.is_valid():
+                    return JsonResponse(req_serializer.errors, status=400)
+                
+                # Create recipe
+                recipe_service = RecipeService()
+                recipe = recipe_service.create_list(userId, **req_serializer.validated_data)
+
+               # Validate response
+                res_serializer = RecipeSerializer(data=vars(recipe))
+                if not res_serializer.is_valid():
+                    return JsonResponse(res_serializer.errors, status=500)
+                
+                # Return response
+                return JsonResponse(res_serializer.data, status=200)
+            except json.JSONDecodeError as e:
+                return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
+            except ValueError as e:
+                return JsonResponse({'error': str(e)}, status=400)
+            except Exception as e:
+                print(e)
+                return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
 
     @csrf_exempt
     @extend_schema(
@@ -322,7 +351,20 @@ class RecipeViewSet(viewsets.ViewSet):
         responses=RecipeSerializer(many=True)
     )
     def get_all_user_recipes(self, request, userId):
-        pass
+        if request.method == 'GET':
+            try:
+                recipe_service = RecipeService()
+                recipes = recipe_service.get_all_lists(userId)
+                res_serializer = ShoppingListSerializer(data=[vars(r) for r in recipes], many=True)
+                if not res_serializer.is_valid():
+                    return JsonResponse(res_serializer.errors, status=500)
+                return JsonResponse(res_serializer.data, status=200, safe=False)
+            except ValueError as e:
+                return JsonResponse({'error': str(e)}, status=400)
+            except Exception as e:
+                print(e)
+                return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
 
     @csrf_exempt
     @extend_schema(
@@ -330,7 +372,57 @@ class RecipeViewSet(viewsets.ViewSet):
         responses=RecipeSerializer
     )
     def get_user_recipe(self, request, userId, recipeId):
-        pass
+        if request.method == 'GET':
+            try:
+                recipe_service = RecipeService()  # Use the RecipeService for fetching recipe info
+                recipe = recipe_service.get_recipe_info(userId, recipeId)  # Fetch recipe based on userId and recipeId
+                res_serializer = RecipeSerializer(data=vars(recipe))  # Use the appropriate RecipeSerializer
+                if not res_serializer.is_valid():
+                    return JsonResponse(res_serializer.errors, status=500)
+                return JsonResponse(res_serializer.data, status=200)
+            except ValueError as e:
+                return JsonResponse({'error': str(e)}, status=400)
+            except Exception as e:
+                print(e)
+                return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+    
+    @csrf_exempt
+    @extend_schema(
+        operation_id='delete_user_recipe',
+        responses=None
+    )
+    def patch_recipe(request, userId, recipeId):
+        if request.method == 'PATCH':
+            try:
+                # Parse JSON body
+                data = json.loads(request.body)
+                
+                # Validate fields
+                req_serializer = RecipePatchSerializer(data=data, partial=True)
+                if not req_serializer.is_valid():
+                    return JsonResponse(req_serializer.errors, status=400)
+                
+                # Update recipe
+                recipe_service = RecipeService()
+                recipe = recipe_service.update_recipe(userId, recipeId, dict(req_serializer.validated_data))
+
+                # Validate response
+                res_serializer = RecipeSerializer(data=vars(recipe))
+                if not res_serializer.is_valid():
+                    return JsonResponse(res_serializer.errors, status=500)
+                
+                # Return response
+                return JsonResponse(res_serializer.data, status=200)
+            except json.JSONDecodeError:
+                return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
+            except ValueError as e:
+                return JsonResponse({'error': str(e)}, status=400)
+            except Exception as e:
+                print(e)
+                return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+        
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
     
     @csrf_exempt
     @extend_schema(
@@ -338,7 +430,17 @@ class RecipeViewSet(viewsets.ViewSet):
         responses=None
     )
     def delete_user_recipe(self, request, userId, recipeId):
-        pass
+        if request.method == 'DELETE':
+            try:
+                recipe_service = RecipeService()  # Use the RecipeService to manage recipes
+                recipe_service.delete_recipe(userId, recipeId)  # Delete the specific recipe
+                return JsonResponse({}, status=204)  # Return a 204 No Content status
+            except ValueError as e:
+                return JsonResponse({'error': str(e)}, status=400)
+            except Exception as e:
+                print(e)
+                return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 # Need to dynamically determine the item type based on the url used
 # Example: /users/<userId>/items/ are pantry items
@@ -353,7 +455,36 @@ class ItemViewSet(viewsets.ViewSet):
         responses=ItemSerializer
     )
     def create_user_item(self, request, userId):
-        pass
+        if request.method == 'POST':
+            try:
+                # Parse JSON body
+                data = json.loads(request.body)
+
+                # Validate fields using the appropriate serializer for items
+                req_serializer = ItemCreateSerializer(data = data)  # Use ItemCreateSerializer for validation
+                if not req_serializer.is_valid():
+                    return JsonResponse(req_serializer.errors, status=400)
+                
+                # Create item using the ItemService
+                item_service = ItemService()  # Use ItemService to create an item
+                item = item_service.create_item('user', userId, **req_serializer.validated_data)
+
+                # Validate response using ItemSerializer
+                res_serializer = ItemSerializer(data=vars(item))  # Use ItemSerializer for the response
+                if not res_serializer.is_valid():
+                    return JsonResponse(res_serializer.errors, status=500)
+                
+                # Return response
+                return JsonResponse(res_serializer.data, status=200)
+            except json.JSONDecodeError as e:
+                return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
+            except ValueError as e:
+                return JsonResponse({'error': str(e)}, status=400)
+            except Exception as e:
+                print(e)
+                return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
 
     @csrf_exempt
     @extend_schema(
@@ -361,8 +492,37 @@ class ItemViewSet(viewsets.ViewSet):
         request=ItemCreateSerializer,
         responses=ItemSerializer
     )
-    def create_list_item(self, request, userId, listId):
-        pass
+    def create_list_item(self, request, listId):
+        if request.method == 'POST':
+            try:
+                # Parse JSON body
+                data = json.loads(request.body)
+
+                # Validate fields using the appropriate serializer for items
+                req_serializer = ItemCreateSerializer(data = data)  # Use ItemCreateSerializer for validation
+                if not req_serializer.is_valid():
+                    return JsonResponse(req_serializer.errors, status=400)
+                
+                # Create item using the ItemService
+                item_service = ItemService()  # Use ItemService to create an item
+                item = item_service.create_item('list', listId, **req_serializer.validated_data)
+
+                # Validate response using ItemSerializer
+                res_serializer = ItemSerializer(data=vars(item))  # Use ItemSerializer for the response
+                if not res_serializer.is_valid():
+                    return JsonResponse(res_serializer.errors, status=500)
+                
+                # Return response
+                return JsonResponse(res_serializer.data, status=200)
+            except json.JSONDecodeError as e:
+                return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
+            except ValueError as e:
+                return JsonResponse({'error': str(e)}, status=400)
+            except Exception as e:
+                print(e)
+                return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
 
     @csrf_exempt
     @extend_schema(
@@ -370,8 +530,37 @@ class ItemViewSet(viewsets.ViewSet):
         request=ItemCreateSerializer,
         responses=ItemSerializer
     )
-    def create_recipe_item(self, request, userId, recipeId):
-        pass
+    def create_recipe_item(self, request, recipeId):
+        if request.method == 'POST':
+            try:
+                # Parse JSON body
+                data = json.loads(request.body)
+
+                # Validate fields using the appropriate serializer for items
+                req_serializer = ItemCreateSerializer(data = data)  # Use ItemCreateSerializer for validation
+                if not req_serializer.is_valid():
+                    return JsonResponse(req_serializer.errors, status=400)
+                
+                # Create item using the ItemService
+                item_service = ItemService()  # Use ItemService to create an item
+                item = item_service.create_item('recipe', recipeId, **req_serializer.validated_data)
+
+                # Validate response using ItemSerializer
+                res_serializer = ItemSerializer(data=vars(item))  # Use ItemSerializer for the response
+                if not res_serializer.is_valid():
+                    return JsonResponse(res_serializer.errors, status=500)
+                
+                # Return response
+                return JsonResponse(res_serializer.data, status=200)
+            except json.JSONDecodeError as e:
+                return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
+            except ValueError as e:
+                return JsonResponse({'error': str(e)}, status=400)
+            except Exception as e:
+                print(e)
+                return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
 
     @csrf_exempt
     @extend_schema(
@@ -379,23 +568,77 @@ class ItemViewSet(viewsets.ViewSet):
         responses=ItemSerializer(many=True)
     )
     def get_all_user_items(self, request, userId):
-        pass
+        if request.method == 'GET':
+            try:
+                # Use ItemService to fetch all items for the user
+                item_service = ItemService()  # Assuming ItemService handles item-related operations
+                items = item_service.get_all_items('user', userId)  # Fetch all items for the user
+                
+                # Serialize the items using ItemSerializer
+                res_serializer = ItemSerializer(data=[vars(i) for i in items], many=True)  # Serialize the items list
+                if not res_serializer.is_valid():
+                    return JsonResponse(res_serializer.errors, status=500)
+                
+                # Return serialized data as JSON response
+                return JsonResponse(res_serializer.data, status=200, safe=False)
+            except ValueError as e:
+                return JsonResponse({'error': str(e)}, status=400)
+            except Exception as e:
+                print(e)
+                return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
 
     @csrf_exempt
     @extend_schema(
         operation_id='get_all_list_items',
         responses=ItemSerializer(many=True)
     )
-    def get_all_list_items(self, request, userId, listId):
-        pass
+    def get_all_list_items(self, request, listId):
+        if request.method == 'GET':
+            try:
+                # Use ItemService to fetch all items for the user
+                item_service = ItemService()  # Assuming ItemService handles item-related operations
+                items = item_service.get_all_items('list', listId)  # Fetch all items for the user
+                
+                # Serialize the items using ItemSerializer
+                res_serializer = ItemSerializer(data=[vars(i) for i in items], many=True)  # Serialize the items list
+                if not res_serializer.is_valid():
+                    return JsonResponse(res_serializer.errors, status=500)
+                
+                # Return serialized data as JSON response
+                return JsonResponse(res_serializer.data, status=200, safe=False)
+            except ValueError as e:
+                return JsonResponse({'error': str(e)}, status=400)
+            except Exception as e:
+                print(e)
+                return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
 
     @csrf_exempt
     @extend_schema(
         operation_id='get_all_recipe_items',
         responses=ItemSerializer(many=True)
     )
-    def get_all_recipe_items(self, request, userId, recipeId):
-        pass
+    def get_all_recipe_items(self, request, recipeId):
+        if request.method == 'GET':
+            try:
+                # Use ItemService to fetch all items for the user
+                item_service = ItemService()  # Assuming ItemService handles item-related operations
+                items = item_service.get_all_items('recepe', recipeId)  # Fetch all items for the user
+                
+                # Serialize the items using ItemSerializer
+                res_serializer = ItemSerializer(data=[vars(i) for i in items], many=True)  # Serialize the items list
+                if not res_serializer.is_valid():
+                    return JsonResponse(res_serializer.errors, status=500)
+                
+                # Return serialized data as JSON response
+                return JsonResponse(res_serializer.data, status=200, safe=False)
+            except ValueError as e:
+                return JsonResponse({'error': str(e)}, status=400)
+            except Exception as e:
+                print(e)
+                return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
 
     @csrf_exempt
     @extend_schema(
@@ -403,23 +646,79 @@ class ItemViewSet(viewsets.ViewSet):
         responses=ItemSerializer
     )
     def get_user_item(self, request, userId, itemId):
-        pass
+        if request.method == 'GET':
+            try:
+                # Use ItemService to fetch the item information based on userId and itemId
+                item_service = ItemService()  # Assuming ItemService handles item-related operations
+                item = item_service.get_item_info('user', userId, itemId)  # Fetch item info using userId and itemId
+                
+                # Use the appropriate ItemSerializer to serialize the item data
+                res_serializer = ItemSerializer(data=vars(item))
+                if not res_serializer.is_valid():
+                    return JsonResponse(res_serializer.errors, status=500)
+                
+                # Return the serialized item data in the response
+                return JsonResponse(res_serializer.data, status=200)
+            except ValueError as e:
+                return JsonResponse({'error': str(e)}, status=400)
+            except Exception as e:
+                print(e)
+                return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
 
     @csrf_exempt
     @extend_schema(
         operation_id='get_list_item',
         responses=ItemSerializer
     )
-    def get_list_item(self, request, userId, listId, itemId):
-        pass
+    def get_list_item(self, request, listId, itemId):
+        if request.method == 'GET':
+            try:
+                # Use ItemService to fetch the item information based on userId and itemId
+                item_service = ItemService()  # Assuming ItemService handles item-related operations
+                item = item_service.get_item_info('list', listId, itemId)  # Fetch item info using userId and itemId
+                
+                # Use the appropriate ItemSerializer to serialize the item data
+                res_serializer = ItemSerializer(data=vars(item))
+                if not res_serializer.is_valid():
+                    return JsonResponse(res_serializer.errors, status=500)
+                
+                # Return the serialized item data in the response
+                return JsonResponse(res_serializer.data, status=200)
+            except ValueError as e:
+                return JsonResponse({'error': str(e)}, status=400)
+            except Exception as e:
+                print(e)
+                return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+
 
     @csrf_exempt
     @extend_schema(
         operation_id='get_recipe_item',
         responses=ItemSerializer
     )
-    def get_recipe_item(self, request, userId, recipeId, itemId):
-        pass
+    def get_recipe_item(self, request, recipeId, itemId):
+        if request.method == 'GET':
+            try:
+                # Use ItemService to fetch the item information based on userId and itemId
+                item_service = ItemService()  # Assuming ItemService handles item-related operations
+                item = item_service.get_item_info('recepe', recipeId, itemId)  # Fetch item info using userId and itemId
+                
+                # Use the appropriate ItemSerializer to serialize the item data
+                res_serializer = ItemSerializer(data=vars(item))
+                if not res_serializer.is_valid():
+                    return JsonResponse(res_serializer.errors, status=500)
+                
+                # Return the serialized item data in the response
+                return JsonResponse(res_serializer.data, status=200)
+            except ValueError as e:
+                return JsonResponse({'error': str(e)}, status=400)
+            except Exception as e:
+                print(e)
+                return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+
     
     @csrf_exempt
     @extend_schema(
@@ -428,7 +727,36 @@ class ItemViewSet(viewsets.ViewSet):
         responses=ItemSerializer
     )
     def patch_user_item(self, request, userId, itemId):
-        pass
+        if request.method == 'PATCH':
+            try:
+                # Parse JSON body
+                data = json.loads(request.body)
+                
+                # Validate fields
+                req_serializer = ItemPatchSerializer(data=data, partial=True)  # Use the appropriate serializer for item updates
+                if not req_serializer.is_valid():
+                    return JsonResponse(req_serializer.errors, status=400)
+                
+                # Update item
+                item_service = ItemService()
+                item = item_service.update_item('user', userId, itemId, **req_serializer.validated_data)
+
+                # Validate response
+                res_serializer = ItemSerializer(data=vars(item))
+                if not res_serializer.is_valid():
+                    return JsonResponse(res_serializer.errors, status=500)
+                
+                # Return response
+                return JsonResponse(res_serializer.data, status=200)
+            except json.JSONDecodeError as e:
+                return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
+            except ValueError as e:
+                return JsonResponse({'error': str(e)}, status=400)
+            except Exception as e:
+                print(e)
+                return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+        
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
 
     @csrf_exempt
     @extend_schema(
@@ -436,8 +764,37 @@ class ItemViewSet(viewsets.ViewSet):
         request=ItemPatchSerializer,
         responses=ItemSerializer
     )
-    def patch_list_item(self, request, userId, listId, itemId):
-        pass
+    def patch_list_item(self, request, listId, itemId):
+        if request.method == 'PATCH':
+            try:
+                # Parse JSON body
+                data = json.loads(request.body)
+                
+                # Validate fields
+                req_serializer = ItemPatchSerializer(data=data, partial=True)  # Use the appropriate serializer for item updates
+                if not req_serializer.is_valid():
+                    return JsonResponse(req_serializer.errors, status=400)
+                
+                # Update item
+                item_service = ItemService()
+                item = item_service.update_item('list', listId, itemId, **req_serializer.validated_data)
+
+                # Validate response
+                res_serializer = ItemSerializer(data=vars(item))
+                if not res_serializer.is_valid():
+                    return JsonResponse(res_serializer.errors, status=500)
+                
+                # Return response
+                return JsonResponse(res_serializer.data, status=200)
+            except json.JSONDecodeError as e:
+                return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
+            except ValueError as e:
+                return JsonResponse({'error': str(e)}, status=400)
+            except Exception as e:
+                print(e)
+                return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+        
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
 
     @csrf_exempt
     @extend_schema(
@@ -445,8 +802,37 @@ class ItemViewSet(viewsets.ViewSet):
         request=ItemPatchSerializer,
         responses=ItemSerializer
     )
-    def patch_recipe_item(self, request, userId, recipeId, itemId):
-        pass
+    def patch_recipe_item(self, request, recipeId, itemId):
+        if request.method == 'PATCH':
+            try:
+                # Parse JSON body
+                data = json.loads(request.body)
+                
+                # Validate fields
+                req_serializer = ItemPatchSerializer(data=data, partial=True)  # Use the appropriate serializer for item updates
+                if not req_serializer.is_valid():
+                    return JsonResponse(req_serializer.errors, status=400)
+                
+                # Update item
+                item_service = ItemService()
+                item = item_service.update_item('recipe', recipeId, itemId, **req_serializer.validated_data)
+
+                # Validate response
+                res_serializer = ItemSerializer(data=vars(item))
+                if not res_serializer.is_valid():
+                    return JsonResponse(res_serializer.errors, status=500)
+                
+                # Return response
+                return JsonResponse(res_serializer.data, status=200)
+            except json.JSONDecodeError as e:
+                return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
+            except ValueError as e:
+                return JsonResponse({'error': str(e)}, status=400)
+            except Exception as e:
+                print(e)
+                return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+        
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
     
     @csrf_exempt
     @extend_schema(
@@ -454,23 +840,56 @@ class ItemViewSet(viewsets.ViewSet):
         responses=None
     )
     def delete_user_item(self, request, userId, itemId):
-        pass
+        if request.method == 'DELETE':
+            try:
+                item_service = ItemService()  # Use the ItemService to manage items
+                item_service.delete_item('user', userId, itemId)  # Delete the specific item
+                return JsonResponse({}, status=204)  # Return a 204 No Content status
+            except ValueError as e:
+                return JsonResponse({'error': str(e)}, status=400)
+            except Exception as e:
+                print(e)
+                return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+        
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
 
     @csrf_exempt
     @extend_schema(
         operation_id='delete_list_item',
         responses=None
     )
-    def delete_list_item(self, request, userId, listId, itemId):
-        pass
+    def delete_list_item(self, request, listId, itemId):
+        if request.method == 'DELETE':
+            try:
+                item_service = ItemService()  # Use the ItemService to manage items
+                item_service.delete_item('list', listId, itemId)  # Delete the specific item
+                return JsonResponse({}, status=204)  # Return a 204 No Content status
+            except ValueError as e:
+                return JsonResponse({'error': str(e)}, status=400)
+            except Exception as e:
+                print(e)
+                return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+        
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
 
     @csrf_exempt
     @extend_schema(
         operation_id='delete_recipe_item',
         responses=None
     )
-    def delete_recipe_item(self, request, userId, recipeId, itemId):
-        pass
+    def delete_recipe_item(self, request, recipeId, itemId):
+        if request.method == 'DELETE':
+            try:
+                item_service = ItemService()  # Use the ItemService to manage items
+                item_service.delete_item('recipe', recipeId, itemId)  # Delete the specific item
+                return JsonResponse({}, status=204)  # Return a 204 No Content status
+            except ValueError as e:
+                return JsonResponse({'error': str(e)}, status=400)
+            except Exception as e:
+                print(e)
+                return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+        
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
 
         
     
