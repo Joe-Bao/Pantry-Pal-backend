@@ -189,9 +189,9 @@ class ShoppingListRepo(GenenericRepo):
         
         db_table.update_item(
             Key={"PK": PK, "SK": SK},
-            UpdateExpression="SET #name = :name",
-            ExpressionAttributeNames={"#name": "name"},
-            ExpressionAttributeValues={":name": new_name}
+            UpdateExpression="SET #name = :name, #modifiedAt = :modifiedAt",
+            ExpressionAttributeNames={"#name": "name", "#modifiedAt": "modifiedAt"},
+            ExpressionAttributeValues={":name": new_name, ":modifiedAt": GetCurrentTimeInSeconds()},
         )
 
         return ShoppingList(PK, SK, new_name)
@@ -270,6 +270,32 @@ class RecipeRepo(GenenericRepo):
         recipe = Recipe(PK, SK, name, instructions, servings)
         db_table.put_item(Item=vars(recipe))
 
+        return recipe
+    
+    def update(self, uid: str, rid: str, data: dict) -> Recipe:
+        PK = DB_PREFIX_USER + uid
+        SK = DB_PREFIX_RECIPE + rid
+
+        now = GetCurrentTimeInSeconds()
+        UpdateExpression="SET #modifiedAt = :modifiedAt"
+        ExpressionAttributeNames={"#modifiedAt": "modifiedAt"}
+        ExpressionAttributeValues={":modifiedAt": now}
+
+        for key in data:
+            UpdateExpression += f", #{key} = :{key}"
+            ExpressionAttributeNames["#" + key] = key
+            ExpressionAttributeValues[":" + key] = data[key]
+        
+        resp = db_table.update_item(
+            Key={"PK": PK, "SK": SK},
+            UpdateExpression=UpdateExpression,
+            ExpressionAttributeNames=ExpressionAttributeNames,
+            ExpressionAttributeValues=ExpressionAttributeValues,
+            ReturnValues="ALL_NEW"
+        )
+
+        return Recipe(**resp["Attributes"])
+
     def delete(self, uid: str, rid: str):
         PK = DB_PREFIX_USER + uid
         SK = DB_PREFIX_RECIPE + rid
@@ -335,6 +361,30 @@ class ItemRepo(GenenericRepo):
 
         item = Item(PK, SK, name, quantity, unit, price, expiresAt)
         db_table.put_item(Item=vars(item))
+
+    def update(self, ItemType: ItemType, pkid: str, skid: str, data: dict) -> Item:
+        PK = ItemTypePrefix(ItemType) + pkid
+        SK = DB_PREFIX_ITEM + skid
+
+        now = GetCurrentTimeInSeconds()
+        UpdateExpression="SET #modifiedAt = :modifiedAt"
+        ExpressionAttributeNames={"#modifiedAt": "modifiedAt"}
+        ExpressionAttributeValues={":modifiedAt": now}
+
+        for key in data:
+            UpdateExpression += f", #{key} = :{key}"
+            ExpressionAttributeNames["#" + key] = key
+            ExpressionAttributeValues[":" + key] = data[key]
+        
+        resp = db_table.update_item(
+            Key={"PK": PK, "SK": SK},
+            UpdateExpression=UpdateExpression,
+            ExpressionAttributeNames=ExpressionAttributeNames,
+            ExpressionAttributeValues=ExpressionAttributeValues,
+            ReturnValues="ALL_NEW"
+        )
+
+        return Item(**resp["Attributes"])
 
     def delete(self, ItemType: ItemType, pkid: str, skid: str):
         PK = ItemTypePrefix(ItemType) + pkid
