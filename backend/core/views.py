@@ -158,7 +158,7 @@ class ShoppingListViewSet(viewsets.ViewSet):
         responses=ShoppingListSerializer
     )
     def create_user_list(self, request, userId):
-        if request.method == 'POST':
+        if request.method == 'PUT':
             try:
                 # Parse JSON body
                 data = json.loads(request.body)
@@ -314,7 +314,7 @@ class RecipeViewSet(viewsets.ViewSet):
         responses=RecipeSerializer
     )
     def create_user_recipe(self, request, userId):
-        if request.method == 'POST':
+        if request.method == 'PUT':
             try:
                 # Parse JSON body
                 data = json.loads(request.body)
@@ -455,7 +455,7 @@ class ItemViewSet(viewsets.ViewSet):
         responses=ItemSerializer
     )
     def create_user_item(self, request, userId):
-        if request.method == 'POST':
+        if request.method == 'PUT':
             try:
                 # Parse JSON body
                 data = json.loads(request.body)
@@ -493,7 +493,7 @@ class ItemViewSet(viewsets.ViewSet):
         responses=ItemSerializer
     )
     def create_list_item(self, request, userId , listId):
-        if request.method == 'POST':
+        if request.method == 'PUT':
             try:
                 # Parse JSON body
                 data = json.loads(request.body)
@@ -531,7 +531,7 @@ class ItemViewSet(viewsets.ViewSet):
         responses=ItemSerializer
     )
     def create_recipe_item(self, request, userId, recipeId):
-        if request.method == 'POST':
+        if request.method == 'PUT':
             try:
                 # Parse JSON body
                 data = json.loads(request.body)
