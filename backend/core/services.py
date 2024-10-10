@@ -155,11 +155,11 @@ class ItemService:
     def get_all_items(self, ItemType, pkId: str) -> List[Item]:
         return self.item_repo.get_all(ItemType, pkId)
     
-    def generate_recipe_preview(self, item_names: str) -> list:
+    def generate_recipe_preview(self, item_names: str, item_number: int) -> list:
             url = "https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes/findByIngredients"
             querystring = {
                 "ingredients": item_names,
-                "number": "3",
+                "number": item_number,
                 "ignorePantry": "true",
                 "ranking": "1"
             }

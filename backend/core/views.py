@@ -21,7 +21,7 @@ class UserViewSet(viewsets.ViewSet):
         responses=UserSerializer
     )
     def register(self, request):
-        if request.method == 'PUT':
+        if request.method == 'POST':
             try:
                 # Parse JSON body
                 data = json.loads(request.body)
@@ -59,7 +59,7 @@ class UserViewSet(viewsets.ViewSet):
         responses=UserSerializer
     )
     def login(self, request):
-        if request.method == 'PUT':
+        if request.method == 'POST':
             try:
                 # Parse JSON body
                 data = json.loads(request.body)
@@ -721,7 +721,7 @@ class ItemViewSet(viewsets.ViewSet):
         operation_id='preview_user_item_recipes',
         responses=RecipeSerializer
     )
-    def preview_user_item_recipes(self, request, userId, itemId):
+    def preview_user_item_recipes(self, request, userId, itemId, number):
         if request.method == 'GET':
             try:
                 # Use ItemService to fetch the item information based on userId and itemId
@@ -735,7 +735,7 @@ class ItemViewSet(viewsets.ViewSet):
                 
                 # Return the serialized item data in the response
                 name = item_serializer.data['name']
-                Response_recipes = item_service.generate_recipe_preview(name)
+                Response_recipes = item_service.generate_recipe_preview(name, number)
                 recipe_previews = [
                     {
                         'id': recipe['id'],
@@ -744,7 +744,6 @@ class ItemViewSet(viewsets.ViewSet):
                     }
                     for recipe in Response_recipes
                 ]
-                print(recipe_previews)
                 res_serializer = RecipePreviewSerializer(data=recipe_previews, many=True)
                 if not res_serializer.is_valid():
                     return JsonResponse(res_serializer.errors, status=500)

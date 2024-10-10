@@ -67,7 +67,7 @@ urlpatterns = [
         ItemViewSet.as_view({ 'get': 'get_user_item', 'patch': 'patch_user_item', 'delete': 'delete_user_item' })
     ),    
     path(
-        'users/<str:userId>/items/<str:itemId>/recipePreview/',
+        'users/<str:userId>/items/<str:itemId>/recipePreview/<int:number>/',
         ItemViewSet.as_view({ 'get': 'preview_user_item_recipes' })
     ), 
     path(
