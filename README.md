@@ -23,6 +23,13 @@ source env/bin/activate
 5. Setup the database:
 `python manage.py migrate`
 
-6. Run the server:
+6. add api key in .env file
+e.g.
+SECRET_KEY
+DEBUG
+DJANGO_ALLOWED_HOSTS
+RAPIDAPI_KEY
+
+7. Run the server:
 `python manage.py runserver`
 
