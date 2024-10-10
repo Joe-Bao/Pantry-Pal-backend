@@ -225,6 +225,10 @@ class Recipe(GenenericRepo):
             name: str,
             instructions: List[str],
             servings: int,
+            diets: List[str],
+            summary: str,
+            img: str,
+            readyInMinutes: int,
             createdAt=None,
             modifiedAt=None
         ):
@@ -233,6 +237,10 @@ class Recipe(GenenericRepo):
         self.name = name
         self.instructions = instructions
         self.servings = servings
+        self.diets = diets  # List of dietary restrictions (e.g., ['gluten free', 'dairy free'])
+        self.summary = summary  # Brief summary of the recipe
+        self.img = img  # URL of the recipe image
+        self.readyInMinutes = readyInMinutes  # Time required to prepare the dish
 
 class RecipeRepo(GenenericRepo):
     def get(self, uid: str, rid: str) -> Recipe:

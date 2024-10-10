@@ -2,6 +2,8 @@
 from .repositories import ShoppingList, ShoppingListRepo, User, UserRepo, RecipeRepo, Recipe, ItemRepo, Item, ItemType
 from datetime import datetime
 from typing import List
+import requests
+from django.conf import settings
 
 class UserService:
     def __init__(self):
@@ -95,6 +97,34 @@ class RecipeService:
     
     def get_all_recipes(self, userid: str) -> List[Recipe]:
         return self.recipe_repo.get_all(userid)
+    
+    def get_recipe_info_webApi(self, recipeWebId: str) -> dict:
+        """
+        Get detailed information for a recipe given its ID.
+
+        Parameters:
+        - recipe_id (int): The ID of the recipe to retrieve information for.
+
+        Returns:
+        - dict: A dictionary containing the recipe details.
+        """
+        url = f"https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes/{recipeWebId}/information"
+
+        # Use the API key from Django settings
+        headers = {
+            "x-rapidapi-key": settings.RAPIDAPI_KEY,
+            "x-rapidapi-host": "spoonacular-recipe-food-nutrition-v1.p.rapidapi.com"
+        }
+
+        # Send a GET request to the Spoonacular API
+        response = requests.get(url, headers=headers)
+
+        # Check if the request was successful
+        if response.status_code == 200:
+            return response.json()
+        else:
+            # If the request fails, raise an error with the response content
+            response.raise_for_status()
 
 
 class ItemService:
@@ -124,3 +154,23 @@ class ItemService:
 
     def get_all_items(self, ItemType, pkId: str) -> List[Item]:
         return self.item_repo.get_all(ItemType, pkId)
+    
+    def generate_recipe_preview(self, item_names: str) -> list:
+            url = "https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes/findByIngredients"
+            querystring = {
+                "ingredients": item_names,
+                "number": "3",
+                "ignorePantry": "true",
+                "ranking": "1"
+            }
+            headers = {
+                "x-rapidapi-key": settings.RAPIDAPI_KEY,  # Use environment variable or config for sensitive data
+                "x-rapidapi-host": "spoonacular-recipe-food-nutrition-v1.p.rapidapi.com"
+            }
+
+            response = requests.get(url, headers=headers, params=querystring)
+
+            if response.status_code == 200:
+                return response.json()  # Return the list of recipe previews (name and image)
+            else:
+                response.raise_for_status()  # Raise an error for bad responses

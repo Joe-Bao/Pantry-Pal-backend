@@ -6,7 +6,7 @@ from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 from rest_framework import viewsets
-from .serializers import ItemCreateSerializer, ItemPatchSerializer, ItemSerializer, RecipeCreateSerializer, RecipePatchSerializer, RecipeSerializer, ShoppingListCreateSerializer, ShoppingListPatchSerializer, ShoppingListSerializer, UserInfoPatchSerializer, UserLoginSerializer, UserRegisterSerializer, UserSerializer
+from .serializers import ItemCreateSerializer, ItemPatchSerializer, ItemSerializer, RecipeCreateSerializer, RecipePatchSerializer, RecipeSerializer, ShoppingListCreateSerializer, ShoppingListPatchSerializer, ShoppingListSerializer, UserInfoPatchSerializer, UserLoginSerializer, UserRegisterSerializer, UserSerializer, RecipePreviewSerializer
 from .services import UserService, ShoppingListService, RecipeService, ItemService
 from rest_framework.parsers import JSONParser
 from rest_framework import views, status
@@ -21,7 +21,7 @@ class UserViewSet(viewsets.ViewSet):
         responses=UserSerializer
     )
     def register(self, request):
-        if request.method == 'POST':
+        if request.method == 'PUT':
             try:
                 # Parse JSON body
                 data = json.loads(request.body)
@@ -59,7 +59,7 @@ class UserViewSet(viewsets.ViewSet):
         responses=UserSerializer
     )
     def login(self, request):
-        if request.method == 'POST':
+        if request.method == 'PUT':
             try:
                 # Parse JSON body
                 data = json.loads(request.body)
@@ -158,7 +158,7 @@ class ShoppingListViewSet(viewsets.ViewSet):
         responses=ShoppingListSerializer
     )
     def create_user_list(self, request, userId):
-        if request.method == 'POST':
+        if request.method == 'PUT':
             try:
                 # Parse JSON body
                 data = json.loads(request.body)
@@ -314,7 +314,7 @@ class RecipeViewSet(viewsets.ViewSet):
         responses=RecipeSerializer
     )
     def create_user_recipe(self, request, userId):
-        if request.method == 'POST':
+        if request.method == 'PUT':
             try:
                 # Parse JSON body
                 data = json.loads(request.body)
@@ -441,6 +441,55 @@ class RecipeViewSet(viewsets.ViewSet):
                 print(e)
                 return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
         return JsonResponse({'error': 'Invalid request method'}, status=405)
+    
+    @csrf_exempt
+    @extend_schema(
+        operation_id='get_recipe_info_webApi',
+        responses=None
+    )
+    def get_recipe_info_webApi(self, request, recipeWebId, userId, itemId):
+        if request.method == 'GET':
+            try:
+                recipe_service = RecipeService()  
+                recipe_data = recipe_service.get_recipe_info_webApi(recipeWebId)
+                recipe_info = {
+                    'name': recipe_data['title'],  # Recipe name comes from the `title` field in JSON
+                    'instructions': [recipe_data['instructions']] if isinstance(recipe_data['instructions'], str) else recipe_data['instructions'] or ["None"],
+                    'servings': recipe_data['servings'],
+                    'diets': recipe_data['diets'],
+                    'summary': recipe_data['summary'] or 'None',
+                    'img': recipe_data['image'],
+                    'readyInMinutes': recipe_data['readyInMinutes']
+                }
+                recipe_serializer = RecipeCreateSerializer(data = recipe_info)
+                ingredients = [
+                    {
+                        'name': ingredient['name'],
+                        'quantity': ingredient['amount'],
+                        'unit': ingredient['unit'],
+                        'price': 0,
+                        'expiresAt': 0,
+                    }
+                    for ingredient in recipe_data['extendedIngredients']
+                ]
+                ingredient_serializer = ItemCreateSerializer(data = ingredients, many = True)
+                print(ingredient_serializer)
+                if not recipe_serializer.is_valid():
+                    return JsonResponse(recipe_serializer.errors, status=500)
+                if not ingredient_serializer.is_valid():
+                    return JsonResponse(ingredient_serializer.errors, status=500)
+                res_serializer = {
+                    'recipe': recipe_serializer.data,        # Serialized recipe details
+                    'ingredients': ingredient_serializer.data  # Serialized ingredients
+                }
+                return JsonResponse(res_serializer, status=200, safe=False)
+            except ValueError as e:
+                return JsonResponse({'error': str(e)}, status=400)
+            except Exception as e:
+                print(e)
+                return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+
 
 # Need to dynamically determine the item type based on the url used
 # Example: /users/<userId>/items/ are pantry items
@@ -455,7 +504,7 @@ class ItemViewSet(viewsets.ViewSet):
         responses=ItemSerializer
     )
     def create_user_item(self, request, userId):
-        if request.method == 'POST':
+        if request.method == 'PUT':
             try:
                 # Parse JSON body
                 data = json.loads(request.body)
@@ -493,7 +542,7 @@ class ItemViewSet(viewsets.ViewSet):
         responses=ItemSerializer
     )
     def create_list_item(self, request, userId , listId):
-        if request.method == 'POST':
+        if request.method == 'PUT':
             try:
                 # Parse JSON body
                 data = json.loads(request.body)
@@ -531,7 +580,7 @@ class ItemViewSet(viewsets.ViewSet):
         responses=ItemSerializer
     )
     def create_recipe_item(self, request, userId, recipeId):
-        if request.method == 'POST':
+        if request.method == 'PUT':
             try:
                 # Parse JSON body
                 data = json.loads(request.body)
@@ -625,7 +674,7 @@ class ItemViewSet(viewsets.ViewSet):
             try:
                 # Use ItemService to fetch all items for the user
                 item_service = ItemService()  # Assuming ItemService handles item-related operations
-                items = item_service.get_all_items('recepe', recipeId)  # Fetch all items for the user
+                items = item_service.get_all_items('recipe', recipeId)  # Fetch all items for the user
                 
                 # Serialize the items using ItemSerializer
                 res_serializer = ItemSerializer(data=[vars(i) for i in items], many=True)  # Serialize the items list
@@ -660,6 +709,46 @@ class ItemViewSet(viewsets.ViewSet):
                 
                 # Return the serialized item data in the response
                 return JsonResponse(res_serializer.data, status=200)
+            except ValueError as e:
+                return JsonResponse({'error': str(e)}, status=400)
+            except Exception as e:
+                print(e)
+                return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+    
+    @csrf_exempt
+    @extend_schema(
+        operation_id='preview_user_item_recipes',
+        responses=RecipeSerializer
+    )
+    def preview_user_item_recipes(self, request, userId, itemId):
+        if request.method == 'GET':
+            try:
+                # Use ItemService to fetch the item information based on userId and itemId
+                item_service = ItemService()  # Assuming ItemService handles item-related operations
+                item = item_service.get_item_info('user', userId, itemId)  # Fetch item info using userId and itemId
+                
+                # Use the appropriate ItemSerializer to serialize the item data
+                item_serializer = ItemSerializer(data=vars(item))
+                if not item_serializer.is_valid():
+                    return JsonResponse(item_serializer.errors, status=500)
+                
+                # Return the serialized item data in the response
+                name = item_serializer.data['name']
+                Response_recipes = item_service.generate_recipe_preview(name)
+                recipe_previews = [
+                    {
+                        'id': recipe['id'],
+                        'name': recipe['title'],
+                        'img': recipe['image']
+                    }
+                    for recipe in Response_recipes
+                ]
+                print(recipe_previews)
+                res_serializer = RecipePreviewSerializer(data=recipe_previews, many=True)
+                if not res_serializer.is_valid():
+                    return JsonResponse(res_serializer.errors, status=500)
+                return JsonResponse(res_serializer.data, status=200, safe=False)
             except ValueError as e:
                 return JsonResponse({'error': str(e)}, status=400)
             except Exception as e:
@@ -704,7 +793,7 @@ class ItemViewSet(viewsets.ViewSet):
             try:
                 # Use ItemService to fetch the item information based on userId and itemId
                 item_service = ItemService()  # Assuming ItemService handles item-related operations
-                item = item_service.get_item_info('recepe', recipeId, itemId)  # Fetch item info using userId and itemId
+                item = item_service.get_item_info('recipe', recipeId, itemId)  # Fetch item info using userId and itemId
                 
                 # Use the appropriate ItemSerializer to serialize the item data
                 res_serializer = ItemSerializer(data=vars(item))
