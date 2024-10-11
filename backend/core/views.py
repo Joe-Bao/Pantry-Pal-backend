@@ -11,7 +11,7 @@ from .services import UserService, ShoppingListService, RecipeService, ItemServi
 from rest_framework.parsers import JSONParser
 from rest_framework import views, status
 from rest_framework.response import Response
-
+from .repositories import ItemType
 
 class UserViewSet(viewsets.ViewSet):
     @csrf_exempt
@@ -445,7 +445,7 @@ class RecipeViewSet(viewsets.ViewSet):
     @csrf_exempt
     @extend_schema(
         operation_id='get_recipe_info_webApi',
-        responses=None
+        responses=object
     )
     def get_recipe_info_webApi(self, request, recipeWebId, userId, itemId):
         if request.method == 'GET':
@@ -473,13 +473,12 @@ class RecipeViewSet(viewsets.ViewSet):
                     for ingredient in recipe_data['extendedIngredients']
                 ]
                 ingredient_serializer = ItemCreateSerializer(data = ingredients, many = True)
-                print(ingredient_serializer)
                 if not recipe_serializer.is_valid():
                     return JsonResponse(recipe_serializer.errors, status=500)
                 if not ingredient_serializer.is_valid():
                     return JsonResponse(ingredient_serializer.errors, status=500)
                 res_serializer = {
-                    'recipe': recipe_serializer.data,        # Serialized recipe details
+                    ItemType.list: recipe_serializer.data,        # Serialized recipe details
                     'ingredients': ingredient_serializer.data  # Serialized ingredients
                 }
                 return JsonResponse(res_serializer, status=200, safe=False)
@@ -516,8 +515,8 @@ class ItemViewSet(viewsets.ViewSet):
                 
                 # Create item using the ItemService
                 item_service = ItemService()  # Use ItemService to create an item
-                item = item_service.create_item('user', userId, **req_serializer.validated_data)
-
+                item = item_service.create_item(ItemType.user, userId, **req_serializer.validated_data)
+                
                 # Validate response using ItemSerializer
                 res_serializer = ItemSerializer(data=vars(item))  # Use ItemSerializer for the response
                 if not res_serializer.is_valid():
@@ -554,7 +553,7 @@ class ItemViewSet(viewsets.ViewSet):
                 
                 # Create item using the ItemService
                 item_service = ItemService()  # Use ItemService to create an item
-                item = item_service.create_item('list', listId, **req_serializer.validated_data)
+                item = item_service.create_item(ItemType.list, listId, **req_serializer.validated_data)
 
                 # Validate response using ItemSerializer
                 res_serializer = ItemSerializer(data=vars(item))  # Use ItemSerializer for the response
@@ -592,7 +591,7 @@ class ItemViewSet(viewsets.ViewSet):
                 
                 # Create item using the ItemService
                 item_service = ItemService()  # Use ItemService to create an item
-                item = item_service.create_item('recipe', recipeId, **req_serializer.validated_data)
+                item = item_service.create_item(ItemType.list, recipeId, **req_serializer.validated_data)
 
                 # Validate response using ItemSerializer
                 res_serializer = ItemSerializer(data=vars(item))  # Use ItemSerializer for the response
@@ -621,10 +620,42 @@ class ItemViewSet(viewsets.ViewSet):
             try:
                 # Use ItemService to fetch all items for the user
                 item_service = ItemService()  # Assuming ItemService handles item-related operations
-                items = item_service.get_all_items('user', userId)  # Fetch all items for the user
+                items = item_service.get_all_items(ItemType.user, userId)  # Fetch all items for the user
                 
                 # Serialize the items using ItemSerializer
                 res_serializer = ItemSerializer(data=[vars(i) for i in items], many=True)  # Serialize the items list
+                if not res_serializer.is_valid():
+                    return JsonResponse(res_serializer.errors, status=500)
+                
+                # Return serialized data as JSON response
+                return JsonResponse(res_serializer.data, status=200, safe=False)
+            except ValueError as e:
+                return JsonResponse({'error': str(e)}, status=400)
+            except Exception as e:
+                print(e)
+                return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+    
+    @csrf_exempt
+    @extend_schema(
+        operation_id='search_item_by_barcode',
+        responses=ItemSerializer(many=True)
+    )
+    def search_item_by_barcode(self, request, userId, barCode):
+        if request.method == 'GET':
+            try:
+                # Use ItemService to fetch all items for the user
+                item_service = ItemService()  # Assuming ItemService handles item-related operations
+                item_data = item_service.search_by_barcode_woolworths(barCode)  # Fetch all items for the user
+                item_info = {
+                    'name': item_data['product_name'],
+                    'quantity': 1,
+                    'unit': item_data['product_size'],
+                    'price': float(item_data['current_price']),
+                    'expiresAt': 0
+                }
+                # Serialize the items using ItemSerializer
+                res_serializer = ItemCreateSerializer(data=item_info)  # Serialize the items list
                 if not res_serializer.is_valid():
                     return JsonResponse(res_serializer.errors, status=500)
                 
@@ -640,15 +671,14 @@ class ItemViewSet(viewsets.ViewSet):
     @csrf_exempt
     @extend_schema(
         operation_id='get_all_list_items',
-        responses=ItemSerializer(many=True)
+        responses=ItemSerializer
     )
     def get_all_list_items(self, request, userId, listId):
         if request.method == 'GET':
             try:
-                print("test1")
                 # Use ItemService to fetch all items for the user
                 item_service = ItemService()  # Assuming ItemService handles item-related operations
-                items = item_service.get_all_items('list', listId)  # Fetch all items for the user
+                items = item_service.get_all_items(ItemType.list, listId)  # Fetch all items for the user
                 
                 # Serialize the items using ItemSerializer
                 res_serializer = ItemSerializer(data=[vars(i) for i in items], many=True)  # Serialize the items list
@@ -674,7 +704,7 @@ class ItemViewSet(viewsets.ViewSet):
             try:
                 # Use ItemService to fetch all items for the user
                 item_service = ItemService()  # Assuming ItemService handles item-related operations
-                items = item_service.get_all_items('recipe', recipeId)  # Fetch all items for the user
+                items = item_service.get_all_items(ItemType.list, recipeId)  # Fetch all items for the user
                 
                 # Serialize the items using ItemSerializer
                 res_serializer = ItemSerializer(data=[vars(i) for i in items], many=True)  # Serialize the items list
@@ -700,7 +730,7 @@ class ItemViewSet(viewsets.ViewSet):
             try:
                 # Use ItemService to fetch the item information based on userId and itemId
                 item_service = ItemService()  # Assuming ItemService handles item-related operations
-                item = item_service.get_item_info('user', userId, itemId)  # Fetch item info using userId and itemId
+                item = item_service.get_item_info(ItemType.user, userId, itemId)  # Fetch item info using userId and itemId
                 
                 # Use the appropriate ItemSerializer to serialize the item data
                 res_serializer = ItemSerializer(data=vars(item))
@@ -719,23 +749,26 @@ class ItemViewSet(viewsets.ViewSet):
     @csrf_exempt
     @extend_schema(
         operation_id='preview_user_item_recipes',
-        responses=RecipeSerializer
+        responses=RecipePreviewSerializer(many=True)
     )
-    def preview_user_item_recipes(self, request, userId, itemId, number):
+    def preview_user_item_recipes(self, request, userId, itemIds, number):
         if request.method == 'GET':
             try:
-                # Use ItemService to fetch the item information based on userId and itemId
-                item_service = ItemService()  # Assuming ItemService handles item-related operations
-                item = item_service.get_item_info('user', userId, itemId)  # Fetch item info using userId and itemId
-                
-                # Use the appropriate ItemSerializer to serialize the item data
-                item_serializer = ItemSerializer(data=vars(item))
-                if not item_serializer.is_valid():
-                    return JsonResponse(item_serializer.errors, status=500)
-                
-                # Return the serialized item data in the response
-                name = item_serializer.data['name']
-                Response_recipes = item_service.generate_recipe_preview(name, number)
+                item_id_list = itemIds.split(',')
+                item_names = []
+                item_service = ItemService()
+                for itemId in item_id_list:
+                    try:
+                        # Use ItemService to fetch item information
+                        item_service = ItemService()
+                        item = item_service.get_item_info(ItemType.user, userId, itemId)
+                        item_serializer = ItemSerializer(data=vars(item))
+                        if not item_serializer.is_valid():
+                            return JsonResponse(item_serializer.errors, status=500)
+                        item_names.append(item_serializer.data['name'])
+                    except Exception as e:  
+                        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                Response_recipes = item_service.generate_recipe_preview(item_names, number)
                 recipe_previews = [
                     {
                         'id': recipe['id'],
@@ -765,7 +798,7 @@ class ItemViewSet(viewsets.ViewSet):
             try:
                 # Use ItemService to fetch the item information based on userId and itemId
                 item_service = ItemService()  # Assuming ItemService handles item-related operations
-                item = item_service.get_item_info('list', listId, itemId)  # Fetch item info using userId and itemId
+                item = item_service.get_item_info(ItemType.list, listId, itemId)  # Fetch item info using userId and itemId
                 
                 # Use the appropriate ItemSerializer to serialize the item data
                 res_serializer = ItemSerializer(data=vars(item))
@@ -792,7 +825,7 @@ class ItemViewSet(viewsets.ViewSet):
             try:
                 # Use ItemService to fetch the item information based on userId and itemId
                 item_service = ItemService()  # Assuming ItemService handles item-related operations
-                item = item_service.get_item_info('recipe', recipeId, itemId)  # Fetch item info using userId and itemId
+                item = item_service.get_item_info(ItemType.list, recipeId, itemId)  # Fetch item info using userId and itemId
                 
                 # Use the appropriate ItemSerializer to serialize the item data
                 res_serializer = ItemSerializer(data=vars(item))
@@ -828,7 +861,7 @@ class ItemViewSet(viewsets.ViewSet):
                 
                 # Update item
                 item_service = ItemService()
-                item = item_service.update_item('user', userId, itemId, **req_serializer.validated_data)
+                item = item_service.update_item(ItemType.user, userId, itemId, **req_serializer.validated_data)
 
                 # Validate response
                 res_serializer = ItemSerializer(data=vars(item))
@@ -866,7 +899,7 @@ class ItemViewSet(viewsets.ViewSet):
                 
                 # Update item
                 item_service = ItemService()
-                item = item_service.update_item('list', listId, itemId, **req_serializer.validated_data)
+                item = item_service.update_item(ItemType.list, listId, itemId, **req_serializer.validated_data)
 
                 # Validate response
                 res_serializer = ItemSerializer(data=vars(item))
@@ -904,7 +937,7 @@ class ItemViewSet(viewsets.ViewSet):
                 
                 # Update item
                 item_service = ItemService()
-                item = item_service.update_item('recipe', recipeId, itemId, **req_serializer.validated_data)
+                item = item_service.update_item(ItemType.list, recipeId, itemId, **req_serializer.validated_data)
 
                 # Validate response
                 res_serializer = ItemSerializer(data=vars(item))
@@ -932,7 +965,7 @@ class ItemViewSet(viewsets.ViewSet):
         if request.method == 'DELETE':
             try:
                 item_service = ItemService()  # Use the ItemService to manage items
-                item_service.delete_item('user', userId, itemId)  # Delete the specific item
+                item_service.delete_item(ItemType.user, userId, itemId)  # Delete the specific item
                 return JsonResponse({}, status=204)  # Return a 204 No Content status
             except ValueError as e:
                 return JsonResponse({'error': str(e)}, status=400)
@@ -951,7 +984,7 @@ class ItemViewSet(viewsets.ViewSet):
         if request.method == 'DELETE':
             try:
                 item_service = ItemService()  # Use the ItemService to manage items
-                item_service.delete_item('list', listId, itemId)  # Delete the specific item
+                item_service.delete_item(ItemType.list, listId, itemId)  # Delete the specific item
                 return JsonResponse({}, status=204)  # Return a 204 No Content status
             except ValueError as e:
                 return JsonResponse({'error': str(e)}, status=400)
@@ -970,7 +1003,7 @@ class ItemViewSet(viewsets.ViewSet):
         if request.method == 'DELETE':
             try:
                 item_service = ItemService()  # Use the ItemService to manage items
-                item_service.delete_item('recipe', recipeId, itemId)  # Delete the specific item
+                item_service.delete_item(ItemType.list, recipeId, itemId)  # Delete the specific item
                 return JsonResponse({}, status=204)  # Return a 204 No Content status
             except ValueError as e:
                 return JsonResponse({'error': str(e)}, status=400)

@@ -155,10 +155,11 @@ class ItemService:
     def get_all_items(self, ItemType, pkId: str) -> List[Item]:
         return self.item_repo.get_all(ItemType, pkId)
     
-    def generate_recipe_preview(self, item_names: str, item_number: int) -> list:
+    def generate_recipe_preview(self, item_names: list[str], item_number: int) -> list:
             url = "https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes/findByIngredients"
+            ingredients = ','.join(item_names)
             querystring = {
-                "ingredients": item_names,
+                "ingredients": ingredients,
                 "number": item_number,
                 "ignorePantry": "true",
                 "ranking": "1"
@@ -174,3 +175,17 @@ class ItemService:
                 return response.json()  # Return the list of recipe previews (name and image)
             else:
                 response.raise_for_status()  # Raise an error for bad responses
+
+    def search_by_barcode_woolworths(self, barcode: str):
+        url = f"https://woolworths-products-api.p.rapidapi.com/woolworths/barcode-search/{barcode}/"
+
+        headers = {
+            "x-rapidapi-key": settings.RAPIDAPI_KEY,
+            "x-rapidapi-host": "woolworths-products-api.p.rapidapi.com"
+        }
+
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            return response.json()  # Return the list of recipe previews (name and image)
+        else:
+            response.raise_for_status()  # Raise an error for bad responses
