@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 from rest_framework import viewsets
 from .serializers import ItemCreateSerializer, ItemPatchSerializer, ItemSerializer, RecipeCreateSerializer, RecipePatchSerializer, RecipeSerializer, ShoppingListCreateSerializer, ShoppingListPatchSerializer, ShoppingListSerializer, UserInfoPatchSerializer, UserLoginSerializer, UserRegisterSerializer, UserSerializer, RecipePreviewSerializer
-from .services import UserService, ShoppingListService, RecipeService, ItemService
+from .services import UserService, ShoppingListService, RecipeService, ItemService, ApiService
 from rest_framework.parsers import JSONParser
 from rest_framework import views, status
 from rest_framework.response import Response
@@ -450,8 +450,8 @@ class RecipeViewSet(viewsets.ViewSet):
     def get_recipe_info_webApi(self, request, recipeWebId, userId, itemId):
         if request.method == 'GET':
             try:
-                recipe_service = RecipeService()  
-                recipe_data = recipe_service.get_recipe_info_webApi(recipeWebId)
+                api_service = ApiService
+                recipe_data = api_service.get_recipe_info_webApi(recipeWebId)
                 recipe_info = {
                     'name': recipe_data['title'],  # Recipe name comes from the `title` field in JSON
                     'instructions': [recipe_data['instructions']] if isinstance(recipe_data['instructions'], str) else recipe_data['instructions'] or ["None"],
@@ -645,8 +645,8 @@ class ItemViewSet(viewsets.ViewSet):
         if request.method == 'GET':
             try:
                 # Use ItemService to fetch all items for the user
-                item_service = ItemService()  # Assuming ItemService handles item-related operations
-                item_data = item_service.search_by_barcode_woolworths(barCode)  # Fetch all items for the user
+                api_service = ApiService()  # Assuming ItemService handles item-related operations
+                item_data = api_service.search_by_barcode_woolworths(barCode)  # Fetch all items for the user
                 item_info = {
                     'name': item_data['product_name'],
                     'quantity': 1,
@@ -768,7 +768,8 @@ class ItemViewSet(viewsets.ViewSet):
                         item_names.append(item_serializer.data['name'])
                     except Exception as e:  
                         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                Response_recipes = item_service.generate_recipe_preview(item_names, number)
+                api_service = ApiService()
+                Response_recipes = api_service.generate_recipe_preview(item_names, number)
                 recipe_previews = [
                     {
                         'id': recipe['id'],
