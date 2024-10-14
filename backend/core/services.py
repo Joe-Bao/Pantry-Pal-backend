@@ -2,6 +2,7 @@
 from .repositories import ShoppingList, ShoppingListRepo, User, UserRepo, RecipeRepo, Recipe, ItemRepo, Item, ItemType
 from datetime import datetime
 from typing import List
+import requests
 
 class UserService:
     def __init__(self):
@@ -124,3 +125,72 @@ class ItemService:
 
     def get_all_items(self, ItemType, pkId: str) -> List[Item]:
         return self.item_repo.get_all(ItemType, pkId)
+
+class WoolworthsService():
+    def __init__(self):
+        self.barcode = ""
+
+    def get_item_by_barcode(self, barcode: str): 
+        self.barcode = barcode
+        url = "https://woolworths-products-api.p.rapidapi.com/woolworths/barcode-search/" + barcode
+        headers = {
+        "x-rapidapi-key": "c36d754c2amsh965ddeec202208dp1ea653jsn452d42b5fc58",
+        "x-rapidapi-host": "woolworths-products-api.p.rapidapi.com"
+        }
+        response = requests.get(url, headers=headers)
+
+        self.amt = ""
+        self.unit = ""
+        for x in response.json()['product_size']:
+            if x.isdigit():
+                self.amt = self.amt + x
+            else:
+                self.unit = self.unit + x
+
+        self.barcode = int(response.json()['barcode'])
+        self.product_name = str(response.json()['product_name'])
+        self.product_brand = str(response.json()['product_brand'])
+        self.current_price = float(response.json()['current_price'])
+        self.product_amt = float(self.amt)
+        self.product_unit = self.unit
+        self.url = response.json()['url']
+        
+        self.item = {"name" : self.product_name, 
+                "brand" : self.product_brand,
+                "amt" : self.product_amt,
+                "unit" : self.product_unit,
+                "price" : self.current_price,
+                "url" : self.url
+        }
+        print(self.item)
+        return self.item
+    
+
+    def get_item_by_name(self, name: str):
+        self.url = "https://woolworths-products-api.p.rapidapi.com/woolworths/product-search/"
+
+        self.querystring = {"query":name}
+
+        headers = {
+            "x-rapidapi-key": "c36d754c2amsh965ddeec202208dp1ea653jsn452d42b5fc58",
+            "x-rapidapi-host": "woolworths-products-api.p.rapidapi.com"
+        }
+
+        response = requests.get(self.url, headers=headers, params=self.querystring)
+
+        return(response.json()['results'][0])
+    
+    
+    def get_product_list_by_name(self, name: str):
+        self.url = "https://woolworths-products-api.p.rapidapi.com/woolworths/product-search/"
+
+        self.querystring = {"query":name}
+
+        headers = {
+            "x-rapidapi-key": "c36d754c2amsh965ddeec202208dp1ea653jsn452d42b5fc58",
+            "x-rapidapi-host": "woolworths-products-api.p.rapidapi.com"
+        }
+
+        response = requests.get(self.url, headers=headers, params=self.querystring)
+
+        return(response.json()['results'])
