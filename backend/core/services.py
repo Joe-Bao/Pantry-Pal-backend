@@ -1,8 +1,16 @@
 # services.py
+import re
+import boto3
+
+from .settings import WOOLWORTHS_PRODUCTS_API_KEY
+from .globals import UNIT_ABBREVIATIONS_PLURAL, UNIT_ABBREVIATIONS_TO_WORD, UNIT_SINGULAR_TO_PLURAL
 from .repositories import ShoppingList, ShoppingListRepo, User, UserRepo, RecipeRepo, Recipe, ItemRepo, Item, ItemType
 from datetime import datetime
 from typing import List
 import requests
+import asyncio
+
+client = boto3.client('textract')
 
 class UserService:
     def __init__(self):
@@ -35,6 +43,9 @@ class UserService:
         
     def get_user(self, id: str) -> User:
         return self.user_repo.get(id)
+    
+    def user_exists(self, id: str) -> bool:
+        return self.user_repo.user_exists(id)
 
     def update_user_settings(self, id: str, data: dict) -> User:
         if 'username' in data:
@@ -54,6 +65,9 @@ class ShoppingListService:
         
     def get_list_info(self, userid: str, listid: str) -> ShoppingList:
         return self.list_repo.get(userid, listid)
+    
+    def list_exists(self, userid: str, listid: str) -> bool:
+        return self.list_repo.list_exists(userid, listid)
 
     def change_listname(self, userid: str, listid: str, name: str) -> ShoppingList:
         return self.list_repo.change_name(userid, listid, name)
@@ -108,6 +122,9 @@ class ItemService:
 
         return self.item_repo.create(type, pkid, name, quantity, unit, price, expiresAt)
     
+    def batch_create_items(self, type: ItemType, pkid: str, items: List[dict]) -> List[Item]:
+        return self.item_repo.batch_create(type, pkid, items)
+
     def get_item_info(self, type: ItemType, pkid: str, itemid: str) -> Item:
         return self.item_repo.get(type, pkid, itemid)
 
@@ -123,47 +140,108 @@ class ItemService:
     def delete_item(self, type: ItemType, pkId: str, itemid: str):
         self.item_repo.delete(type, pkId, itemid)
 
-    def get_all_items(self, ItemType, pkId: str) -> List[Item]:
-        return self.item_repo.get_all(ItemType, pkId)
+    def get_all_items(self, type: ItemType, pkId: str) -> List[Item]:
+        return self.item_repo.get_all(type, pkId)
+
+class OCRService:
+    def __init__(self):
+        self.client = client
+
+    def extract_lines(self, image: bytes) -> List[str]:
+        response = self.client.detect_document_text(Document={'Bytes': image})
+        return [item['Text'] for item in response['Blocks'] if item['BlockType'] == 'LINE']
+
+    def shopping_list_parser(self, lines: List[str]) -> List[Item]:
+        if "list" in lines[0].lower():
+            lines = lines[1:]
+        
+        # remove non alphanumeric characters
+        for i in range(len(lines)):
+            lines[i] = re.sub(r'[^a-zA-Z0-9\s]', '', lines[i])
+        
+        # find quantity and unit
+        items = []
+        for line in lines:
+            # print(line)
+            words = line.lower().split(" ")
+            quantity = None
+            unit = None
+            name = ""
+            for word in words:
+                if quantity is None:
+                    numChars = re.sub(r'\D', '', word)
+                    letterChars = re.sub(r'[^a-zA-Z]', '', word)
+                    # print(numChars, letterChars)
+                    # if word has no numbers, not a quantity
+                    if len(numChars) == 0:
+                        name += word + " "
+                        continue
+                    
+                    quantity = int(numChars)
+                        
+                    # check for abbreviated units (e.g. 500g, 2tbsp)
+                    if letterChars in UNIT_ABBREVIATIONS_TO_WORD:
+                        unit = UNIT_ABBREVIATIONS_TO_WORD[letterChars]
+                    continue
+                if unit is None:
+                    if word in UNIT_ABBREVIATIONS_PLURAL:
+                        unit = word
+                    elif word in UNIT_SINGULAR_TO_PLURAL:
+                        unit = UNIT_SINGULAR_TO_PLURAL[word]
+                    else:
+                        name += word + " "
+                    continue
+
+                name += word + " "
+            # make sure nothing is empty
+            # print(name, quantity, unit)
+            if len(name) == 0:
+                continue # skip this line
+            if quantity is None:
+                quantity = 1
+            if unit is None:
+                unit = "unit"
+            # print(name, quantity, unit)
+            items.append(Item(PK="", SK="", name=name.strip(), quantity=quantity, unit=unit, price=0, expiresAt=0, ))
+
+        return items
 
 class WoolworthsService():
-    def __init__(self):
-        self.barcode = ""
-
     def get_item_by_barcode(self, barcode: str): 
-        self.barcode = barcode
         url = "https://woolworths-products-api.p.rapidapi.com/woolworths/barcode-search/" + barcode
+
         headers = {
-        "x-rapidapi-key": "c36d754c2amsh965ddeec202208dp1ea653jsn452d42b5fc58",
+        "x-rapidapi-key": WOOLWORTHS_PRODUCTS_API_KEY,
         "x-rapidapi-host": "woolworths-products-api.p.rapidapi.com"
         }
+
         response = requests.get(url, headers=headers)
 
-        self.amt = ""
-        self.unit = ""
-        for x in response.json()['product_size']:
-            if x.isdigit():
-                self.amt = self.amt + x
-            else:
-                self.unit = self.unit + x
+        # self.amt = ""
+        # self.unit = ""
+        # for x in response.json()['product_size']:
+        #     if x.isdigit():
+        #         self.amt = self.amt + x
+        #     else:
+        #         self.unit = self.unit + x
 
-        self.barcode = int(response.json()['barcode'])
-        self.product_name = str(response.json()['product_name'])
-        self.product_brand = str(response.json()['product_brand'])
-        self.current_price = float(response.json()['current_price'])
-        self.product_amt = float(self.amt)
-        self.product_unit = self.unit
-        self.url = response.json()['url']
+        # self.barcode = int(response.json()['barcode'])
+        # self.product_name = str(response.json()['product_name'])
+        # self.product_brand = str(response.json()['product_brand'])
+        # self.current_price = float(response.json()['current_price'])
+        # self.product_amt = float(self.amt)
+        # self.product_unit = self.unit
+        # self.url = response.json()['url']
         
-        self.item = {"name" : self.product_name, 
-                "brand" : self.product_brand,
-                "amt" : self.product_amt,
-                "unit" : self.product_unit,
-                "price" : self.current_price,
-                "url" : self.url
-        }
-        print(self.item)
-        return self.item
+        # self.item = {"name" : self.product_name, 
+        #         "brand" : self.product_brand,
+        #         "amt" : self.product_amt,
+        #         "unit" : self.product_unit,
+        #         "price" : self.current_price,
+        #         "url" : self.url
+        # }
+        # print(self.item)
+        return response.json()
     
 
     def get_item_by_name(self, name: str):
@@ -172,7 +250,7 @@ class WoolworthsService():
         self.querystring = {"query":name}
 
         headers = {
-            "x-rapidapi-key": "c36d754c2amsh965ddeec202208dp1ea653jsn452d42b5fc58",
+            "x-rapidapi-key": WOOLWORTHS_PRODUCTS_API_KEY,
             "x-rapidapi-host": "woolworths-products-api.p.rapidapi.com"
         }
 
@@ -187,10 +265,16 @@ class WoolworthsService():
         self.querystring = {"query":name}
 
         headers = {
-            "x-rapidapi-key": "c36d754c2amsh965ddeec202208dp1ea653jsn452d42b5fc58",
+            "x-rapidapi-key": WOOLWORTHS_PRODUCTS_API_KEY,
             "x-rapidapi-host": "woolworths-products-api.p.rapidapi.com"
         }
 
         response = requests.get(self.url, headers=headers, params=self.querystring)
 
         return(response.json()['results'])
+
+    async def async_batch_get_item_by_name(self, names: List[str]):
+        return await asyncio.gather(*[asyncio.to_thread(self.get_item_by_name, name) for name in names])
+    
+    def batch_get_item_by_name(self, names: List[str]):
+        return asyncio.run(self.async_batch_get_item_by_name(names))

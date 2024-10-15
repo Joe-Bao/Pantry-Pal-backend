@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import path
-from .views import ItemViewSet, RecipeViewSet, ShoppingListViewSet, UserViewSet
+from .views import ItemViewSet, RecipeViewSet, ShoppingListViewSet, UserViewSet, PlaygroundViewSet
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -37,7 +37,7 @@ urlpatterns = [
         'users/<str:userId>/recipes/<str:recipeId>/',
         RecipeViewSet.as_view({
             'get': 'get_user_recipe',
-            'patch': 'patch_recipe',
+            'patch': 'patch_user_recipe',
             'delete': 'delete_user_recipe'
         })
     ),
@@ -65,5 +65,15 @@ urlpatterns = [
     path(
         'users/<str:userId>/items/<str:itemId>/',
         ItemViewSet.as_view({ 'get': 'get_user_item', 'patch': 'patch_user_item', 'delete': 'delete_user_item' })
-    ),    
+    ),
+    #ocr urls
+    path(
+        'users/<str:userId>/lists/<str:listId>/add-items-from-image/',
+        ItemViewSet.as_view({ 'post': 'create_list_items_from_image' })
+    ),
+    # playground urls
+    # path(
+    #     'playground/',
+    #     PlaygroundViewSet.as_view({ 'post': 'playground' })
+    # )
 ]

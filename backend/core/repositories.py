@@ -10,10 +10,10 @@ resource = boto3.resource('dynamodb')
 db_table = resource.Table('DjangoTest')
 
 class GenericModel(object):
-    def __init__(self, PK, SK, createdAt=None, modifiedAt=None):
+    def __init__(self, PK=None, SK=None, createdAt=None, modifiedAt=None):
         now = GetCurrentTimeInSeconds()
-        self.PK = PK
-        self.SK = SK
+        self.PK = generate() if PK is None else PK
+        self.SK = generate() if SK is None else SK
         self.createdAt = now if createdAt is None else createdAt
         self.modifiedAt = now if modifiedAt is None else modifiedAt
 
@@ -313,8 +313,8 @@ class Item(GenericModel):
             unit: str,
             price: float,
             expiresAt: int,
-            createdAt=None,
-            modifiedAt=None
+            createdAt: int | None = None,
+            modifiedAt: int | None = None
         ):
         
         super().__init__(PK, SK, createdAt, modifiedAt)
@@ -361,6 +361,17 @@ class ItemRepo(GenenericRepo):
         item = Item(PK, SK, name, quantity, unit, price, expiresAt)
         db_table.put_item(Item=vars(item))
         return item
+    
+    def batch_create(self, type: ItemType, pkid: str, items: List[dict]) -> List[Item]:
+        PK = ItemTypePrefix(type) + pkid
+        ret_val = []
+        with db_table.batch_writer() as batch:
+            for item in items:
+                SK = DB_PREFIX_ITEM + generate()
+                item = Item(PK, SK, item["name"], item["quantity"], item["unit"], item["price"], item["expiresAt"])
+                ret_val.append(item)
+                batch.put_item(Item=vars(item))
+        return ret_val
 
     def update(self, ItemType: ItemType, pkid: str, skid: str, data: dict) -> Item:
         PK = ItemTypePrefix(ItemType) + pkid

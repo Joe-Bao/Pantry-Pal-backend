@@ -331,6 +331,45 @@ paths:
       responses:
         '204':
           description: No response body
+  /users/{userId}/lists/{listId}/add-items-from-image/:
+    post:
+      operationId: create_list_items_from_image
+      parameters:
+      - in: path
+        name: listId
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      requestBody:
+        content:
+          image/jpeg:
+            schema:
+              type: string
+              format: binary
+          image/png:
+            schema:
+              type: string
+              format: binary
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.api+json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Item'
+          description: ''
   /users/{userId}/lists/{listId}/items/:
     get:
       operationId: get_all_list_items
@@ -554,6 +593,37 @@ paths:
         required: true
       tags:
       - users
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/Recipe'
+          description: ''
+    patch:
+      operationId: patch_user_recipe
+      parameters:
+      - in: path
+        name: recipeId
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      requestBody:
+        content:
+          application/vnd.api+json:
+            schema:
+              $ref: '#/components/schemas/PatchedRecipePatch'
       security:
       - cookieAuth: []
       - basicAuth: []
@@ -800,14 +870,16 @@ components:
           type: string
           maxLength: 100
         quantity:
-          type: number
-          format: double
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
         unit:
           type: string
           maxLength: 100
         price:
-          type: number
-          format: double
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
         expiresAt:
           type: integer
         createdAt:
@@ -831,14 +903,16 @@ components:
           type: string
           maxLength: 100
         quantity:
-          type: number
-          format: double
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
         unit:
           type: string
           maxLength: 100
         price:
-          type: number
-          format: double
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
         expiresAt:
           type: integer
       required:
@@ -854,15 +928,29 @@ components:
           type: string
           maxLength: 100
         quantity:
-          type: number
-          format: double
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
         unit:
           type: string
           maxLength: 100
         price:
-          type: number
-          format: double
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
         expiresAt:
+          type: integer
+    PatchedRecipePatch:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        instructions:
+          type: array
+          items:
+            type: string
+        servings:
           type: integer
     PatchedShoppingListPatch:
       type: object

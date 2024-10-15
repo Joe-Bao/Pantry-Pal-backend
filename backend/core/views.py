@@ -1,3 +1,5 @@
+import re
+from typing import List
 from django.shortcuts import render
 import json
 from django.http import JsonResponse
@@ -6,8 +8,12 @@ from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 from rest_framework import viewsets
+
+from .repositories import Item
+from .utils import GetQuantityFromProductSize, GetUnitFromProductSize
+from .globals import ALLOWED_OCR_CONTENT_TYPES, UNIT_ABBREVIATIONS_PLURAL, ItemType
 from .serializers import ItemCreateSerializer, ItemPatchSerializer, ItemSerializer, RecipeCreateSerializer, RecipePatchSerializer, RecipeSerializer, ShoppingListCreateSerializer, ShoppingListPatchSerializer, ShoppingListSerializer, UserInfoPatchSerializer, UserLoginSerializer, UserRegisterSerializer, UserSerializer
-from .services import UserService, ShoppingListService, RecipeService, ItemService
+from .services import OCRService, UserService, ShoppingListService, RecipeService, ItemService, WoolworthsService
 from rest_framework.parsers import JSONParser
 from rest_framework import views, status
 from rest_framework.response import Response
@@ -389,10 +395,11 @@ class RecipeViewSet(viewsets.ViewSet):
     
     @csrf_exempt
     @extend_schema(
-        operation_id='delete_user_recipe',
-        responses=None
+        operation_id='patch_user_recipe',
+        request=RecipePatchSerializer,
+        responses=RecipeSerializer
     )
-    def patch_recipe(request, userId, recipeId):
+    def patch_user_recipe(request, userId, recipeId):
         if request.method == 'PATCH':
             try:
                 # Parse JSON body
@@ -891,6 +898,94 @@ class ItemViewSet(viewsets.ViewSet):
                 return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
         
         return JsonResponse({'error': 'Invalid request method'}, status=405)
-
-        
     
+    @csrf_exempt
+    @extend_schema(
+        operation_id='create_list_items_from_image',
+        request={
+            "image/jpeg": { "type": "string", "format": "binary" },
+            "image/png": { "type": "string", "format": "binary" }
+        },
+        responses=ItemSerializer(many=True)
+    )
+    def create_list_items_from_image(self, request, userId, listId):
+        if request.method == 'POST':
+            try:
+                # No need to parse body, request.body is a bytestring
+                # Check content type
+                if request.content_type not in ALLOWED_OCR_CONTENT_TYPES:
+                    return JsonResponse({'error': 'Invalid content type'}, status=415)
+
+                # check if user exists
+                user_service = UserService()
+                if not user_service.user_exists(userId):
+                    return JsonResponse({'error': 'User does not exist'}, status=400)
+                
+                # check if list exists
+                list_service = ShoppingListService()
+                if not list_service.list_exists(userId, listId):
+                    return JsonResponse({'error': 'List does not exist'}, status=400)
+
+                # Parse image using OCR service
+                ocr_service = OCRService()
+                lines = ocr_service.extract_lines(request.body)
+
+                # parse shopping list into Item objects
+                items = ocr_service.shopping_list_parser(lines)
+                
+                # create name strings to query Woolworths API (need consistent naming)
+                item_search = []
+                for i in items:
+                    if i.quantity > 1:
+                        if i.unit == 'unit':
+                            item_search.append(f"{i.quantity} {i.name}")
+                        else:
+                            item_search.append(f"{i.name} {i.quantity}{UNIT_ABBREVIATIONS_PLURAL[i.unit]}")
+                    else:
+                        item_search.append(f"{i.name}")
+
+                # query Woolworths API
+                woolies = WoolworthsService()
+                woolies_items = woolies.batch_get_item_by_name([f"{i.name}" for i in items])
+                
+                # create dicts compatible with ItemSerializer
+                final_items: List[dict] = []
+                for i in woolies_items:
+                    final_items.append({
+                        'name': i['product_name'],
+                        'price': i['current_price'],
+                        'quantity': GetQuantityFromProductSize(i['product_size']),
+                        'unit': GetUnitFromProductSize(i['product_size']),
+                        'expiresAt': 0
+                    })
+
+                # validate item dicts
+                item_serializer = ItemCreateSerializer(data=final_items, many=True)
+                if not item_serializer.is_valid():
+                    return JsonResponse(item_serializer.errors, status=500)
+
+                # add items to list in DB
+                item_service = ItemService()
+                db_items = item_service.batch_create_items(ItemType.list, listId, item_serializer.validated_data)
+
+                # Validate response
+                res_serializer = ItemSerializer(data=[vars(i) for i in db_items], many=True)
+                if not res_serializer.is_valid():
+                    return JsonResponse(res_serializer.errors, status=500, safe=False)
+                
+                return JsonResponse(res_serializer.data, status=200, safe=False)
+            except json.JSONDecodeError as e:
+                return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
+            except ValueError as e:
+                return JsonResponse({'error': str(e)}, status=400)
+            except Exception as e:
+                print(e)
+                return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+class PlaygroundViewSet(viewsets.ViewSet):
+    def playground(self, request):
+        woolies = WoolworthsService()
+        print(woolies.batch_get_item_by_name(['penne pasta', 'gourmet tomatoes', 'jasmine rice 1kg', 'garam masala']))
+        return JsonResponse({'message': 'Hello, world!'}, status=200)
