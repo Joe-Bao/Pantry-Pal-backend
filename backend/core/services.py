@@ -193,7 +193,7 @@ class ApiService:
             # If the request fails, raise an error with the response content
             response.raise_for_status()
 
-    def search_product_by_name(name: str, number: int):
+    def search_product_by_name(self, name: str, number: int):
         url = "https://woolworths-products-api.p.rapidapi.com/woolworths/product-search/"
         
         # Create query string with dynamic parameters

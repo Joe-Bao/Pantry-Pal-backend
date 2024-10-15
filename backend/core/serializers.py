@@ -165,3 +165,17 @@ class RecipePreviewSerializer(serializers.Serializer):
     id = recipe_preview_fields['id']
     name = recipe_preview_fields['name']
     img = recipe_preview_fields['img']
+
+Woolworth_item_fields = {
+    'name': serializers.CharField(max_length=255),         # Product name
+    'brand': serializers.CharField(max_length=100), # Brand of the product
+    'current_price': serializers.FloatField(),              # Current price of the product
+    'url': serializers.URLField()                           # Product URL
+}
+
+# Serializer for the items
+class WoolworthItemSerializer(serializers.Serializer):
+    name = Woolworth_item_fields['name']
+    product_brand = Woolworth_item_fields['brand']
+    current_price = Woolworth_item_fields['current_price']
+    url = Woolworth_item_fields['url']

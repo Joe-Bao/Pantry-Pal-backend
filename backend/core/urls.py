@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import path
-from .views import ItemViewSet, RecipeViewSet, ShoppingListViewSet, UserViewSet
+from .views import ItemViewSet, RecipeViewSet, ShoppingListViewSet, UserViewSet, WoolworthsViewSet
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -66,7 +66,7 @@ urlpatterns = [
         ItemViewSet.as_view({ 'get': 'get_recipe_item', 'patch': 'patch_recipe_item', 'delete': 'delete_recipe_item' })
     ),
     path(
-        'users/<str:userId>/items/<str:itemId>/',
+        'users/<str:userId>/items/<str:itemId>/',   
         ItemViewSet.as_view({ 'get': 'get_user_item', 'patch': 'patch_user_item', 'delete': 'delete_user_item' })
     ),    
     path(
@@ -76,5 +76,13 @@ urlpatterns = [
     path(
         'users/<str:userId>/search_item_by_barcode/<str:barCode>/',
         ItemViewSet.as_view({ 'get': 'search_item_by_barcode' })
+    ), 
+    path(
+        'users/<str:userId>/search_item_by_barcode/<str:barCode>/',
+        ItemViewSet.as_view({ 'get': 'search_item_by_barcode' })
+    ),  
+    path(
+        'users/<str:userId>/search_product_by_name/<str:name>/<int:number>/',
+        WoolworthsViewSet.as_view({ 'get': 'search_product_by_name' })
     ),  
 ]

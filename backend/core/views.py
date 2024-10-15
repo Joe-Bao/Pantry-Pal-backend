@@ -6,7 +6,7 @@ from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 from rest_framework import viewsets
-from .serializers import ItemCreateSerializer, ItemPatchSerializer, ItemSerializer, RecipeCreateSerializer, RecipePatchSerializer, RecipeSerializer, ShoppingListCreateSerializer, ShoppingListPatchSerializer, ShoppingListSerializer, UserInfoPatchSerializer, UserLoginSerializer, UserRegisterSerializer, UserSerializer, RecipePreviewSerializer
+from .serializers import ItemCreateSerializer, ItemPatchSerializer, ItemSerializer, RecipeCreateSerializer, RecipePatchSerializer, RecipeSerializer, ShoppingListCreateSerializer, ShoppingListPatchSerializer, ShoppingListSerializer, UserInfoPatchSerializer, UserLoginSerializer, UserRegisterSerializer, UserSerializer, RecipePreviewSerializer, WoolworthItemSerializer
 from .services import UserService, ShoppingListService, RecipeService, ItemService, ApiService
 from rest_framework.parsers import JSONParser
 from rest_framework import views, status
@@ -1014,5 +1014,31 @@ class ItemViewSet(viewsets.ViewSet):
         
         return JsonResponse({'error': 'Invalid request method'}, status=405)
 
+class WoolworthsViewSet(viewsets.ViewSet):  
+    def search_product_by_name(self, request, userId, name, number):
+        if request.method == 'GET':
+            try:
+                api_service = ApiService()  # Use the ItemService to manage items
+                data = api_service.search_product_by_name(name, number)  # Delete the specific item
+                items_data = [
+                    {
+                        'name': item['product_name'],
+                        'product_brand': item['product_brand'],
+                        'current_price': item['current_price'],
+                        'url': item['url']
+                    }
+                    for item in data['results']
+                ]
+                item_serializer = WoolworthItemSerializer(data = items_data, many=True)
+                if not item_serializer.is_valid():
+                    return JsonResponse(item_serializer.errors, status=500)
+                return JsonResponse(item_serializer.data, status=200, safe=False) 
+
+            except ValueError as e:
+                return JsonResponse({'error': str(e)}, status=400)
+            except Exception as e:
+                print(e)
+                return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
         
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
     
