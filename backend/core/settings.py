@@ -26,13 +26,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
 # RAPID API KEYS
-WOOLWORTHS_PRODUCTS_API_KEY = os.environ.get("WOOLWORTHS_PRODUCTS_API_KEY")
+RAPIDAPI_KEY = os.environ.get("RAPIDAPI_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = int(os.environ.get("DEBUG", default=0))
 
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
-
 
 # Application definition
 

@@ -2,7 +2,7 @@
 import re
 import boto3
 
-from .settings import WOOLWORTHS_PRODUCTS_API_KEY
+from .settings import RAPIDAPI_KEY
 from .globals import UNIT_ABBREVIATIONS_PLURAL, UNIT_ABBREVIATIONS_TO_WORD, UNIT_SINGULAR_TO_PLURAL
 from .repositories import ShoppingList, ShoppingListRepo, User, UserRepo, RecipeRepo, Recipe, ItemRepo, Item, ItemType
 from datetime import datetime
@@ -110,7 +110,7 @@ class RecipeService:
     
     def get_all_recipes(self, userid: str) -> List[Recipe]:
         return self.recipe_repo.get_all(userid)
-
+    
 
 class ItemService:
     def __init__(self):
@@ -211,7 +211,7 @@ class WoolworthsService():
         url = "https://woolworths-products-api.p.rapidapi.com/woolworths/barcode-search/" + barcode
 
         headers = {
-        "x-rapidapi-key": WOOLWORTHS_PRODUCTS_API_KEY,
+        "x-rapidapi-key": RAPIDAPI_KEY,
         "x-rapidapi-host": "woolworths-products-api.p.rapidapi.com"
         }
 
@@ -250,7 +250,7 @@ class WoolworthsService():
         self.querystring = {"query":name}
 
         headers = {
-            "x-rapidapi-key": WOOLWORTHS_PRODUCTS_API_KEY,
+            "x-rapidapi-key": RAPIDAPI_KEY,
             "x-rapidapi-host": "woolworths-products-api.p.rapidapi.com"
         }
 
@@ -265,7 +265,7 @@ class WoolworthsService():
         self.querystring = {"query":name}
 
         headers = {
-            "x-rapidapi-key": WOOLWORTHS_PRODUCTS_API_KEY,
+            "x-rapidapi-key": RAPIDAPI_KEY,
             "x-rapidapi-host": "woolworths-products-api.p.rapidapi.com"
         }
 
@@ -278,3 +278,68 @@ class WoolworthsService():
     
     def batch_get_item_by_name(self, names: List[str]):
         return asyncio.run(self.async_batch_get_item_by_name(names))
+
+class ApiService:
+    def search_by_barcode_woolworths(self, barcode: str):
+        url = f"https://woolworths-products-api.p.rapidapi.com/woolworths/barcode-search/{barcode}/"
+
+        headers = {
+            "x-rapidapi-key": RAPIDAPI_KEY,
+            "x-rapidapi-host": "woolworths-products-api.p.rapidapi.com"
+        }
+
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            return response.json()  # Return the list of recipe previews (name and image)
+        else:
+            response.raise_for_status()  # Raise an error for bad responses
+
+
+    def generate_recipe_preview(self, item_names: list[str], item_number: int) -> list:
+        url = "https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes/findByIngredients"
+        ingredients = ','.join(item_names)
+        querystring = {
+            "ingredients": ingredients,
+            "number": item_number,
+            "ignorePantry": "true",
+            "ranking": "1"
+        }
+        headers = {
+            "x-rapidapi-key": RAPIDAPI_KEY,  # Use environment variable or config for sensitive data
+            "x-rapidapi-host": "spoonacular-recipe-food-nutrition-v1.p.rapidapi.com"
+        }
+
+        response = requests.get(url, headers=headers, params=querystring)
+
+        if response.status_code == 200:
+            return response.json()  # Return the list of recipe previews (name and image)
+        else:
+            response.raise_for_status()  # Raise an error for bad responses
+
+    def get_recipe_info_webApi(self, recipeWebId: str) -> dict:
+        """
+        Get detailed information for a recipe given its ID.
+
+        Parameters:
+        - recipe_id (int): The ID of the recipe to retrieve information for.
+
+        Returns:
+        - dict: A dictionary containing the recipe details.
+        """
+        url = f"https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com/recipes/{recipeWebId}/information"
+
+        # Use the API key from Django settings
+        headers = {
+            "x-rapidapi-key": RAPIDAPI_KEY,
+            "x-rapidapi-host": "spoonacular-recipe-food-nutrition-v1.p.rapidapi.com"
+        }
+
+        # Send a GET request to the Spoonacular API
+        response = requests.get(url, headers=headers)
+
+        # Check if the request was successful
+        if response.status_code == 200:
+            return response.json()
+        else:
+            # If the request fails, raise an error with the response content
+            response.raise_for_status()

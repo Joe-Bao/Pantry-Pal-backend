@@ -77,6 +77,10 @@ recipe_fields = {
     'name': serializers.CharField(max_length=100),
     'instructions': serializers.ListField(child=serializers.CharField()),
     'servings': serializers.IntegerField(),
+    'diets': serializers.ListField(child=serializers.CharField()),  # New field for dietary restrictions
+    'summary': serializers.CharField(max_length=512),  # New field for a brief summary
+    'img': serializers.URLField(),  # New field for the image URL
+    'readyInMinutes': serializers.IntegerField(),  # New field for preparation time
     'createdAt': serializers.IntegerField(),
     'modifiedAt': serializers.IntegerField()
 }
@@ -87,6 +91,10 @@ class RecipeSerializer(serializers.Serializer):
     name = recipe_fields['name']
     instructions = recipe_fields['instructions']
     servings = recipe_fields['servings']
+    diets = recipe_fields['diets']  # New field for dietary restrictions
+    summary = recipe_fields['summary']  # New field for a brief summary
+    img = recipe_fields['img']  # New field for the image URL
+    readyInMinutes = recipe_fields['readyInMinutes']  # New field for preparation time
     createdAt = recipe_fields['createdAt']
     modifiedAt = recipe_fields['modifiedAt']
 
@@ -94,11 +102,19 @@ class RecipeCreateSerializer(serializers.Serializer):
     name = recipe_fields['name']
     instructions = recipe_fields['instructions']
     servings = recipe_fields['servings']
+    diets = recipe_fields['diets']  # New field for dietary restrictions
+    summary = recipe_fields['summary']  # New field for a brief summary
+    img = recipe_fields['img']  # New field for the image URL
+    readyInMinutes = recipe_fields['readyInMinutes']  # New field for preparation time
 
 class RecipePatchSerializer(serializers.Serializer):
     name = recipe_fields['name']
     instructions = recipe_fields['instructions']
     servings = recipe_fields['servings']
+    diets = recipe_fields['diets']  # New field for dietary restrictions
+    summary = recipe_fields['summary']  # New field for a brief summary
+    img = recipe_fields['img']  # New field for the image URL
+    readyInMinutes = recipe_fields['readyInMinutes']  # New field for preparation time
 
 # ITEM SERIALIZERS
 
@@ -138,3 +154,28 @@ class ItemPatchSerializer(serializers.Serializer):
     unit = item_fields['unit']
     price = item_fields['price']
     expiresAt = item_fields['expiresAt']
+
+recipe_preview_fields = {
+    'id': serializers.CharField(),  # Assuming ID is a string, adjust as necessary
+    'name': serializers.CharField(max_length=100),
+    'img': serializers.URLField()  # Adjust this if the image field requires a specific format (e.g., URL)
+}
+
+class RecipePreviewSerializer(serializers.Serializer):
+    id = recipe_preview_fields['id']
+    name = recipe_preview_fields['name']
+    img = recipe_preview_fields['img']
+
+Woolworth_item_fields = {
+    'name': serializers.CharField(max_length=255),         # Product name
+    'brand': serializers.CharField(max_length=100), # Brand of the product
+    'current_price': serializers.FloatField(),              # Current price of the product
+    'url': serializers.URLField()                           # Product URL
+}
+
+# Serializer for the items
+class WoolworthItemSerializer(serializers.Serializer):
+    name = Woolworth_item_fields['name']
+    product_brand = Woolworth_item_fields['brand']
+    current_price = Woolworth_item_fields['current_price']
+    url = Woolworth_item_fields['url']

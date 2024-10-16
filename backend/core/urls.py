@@ -31,7 +31,14 @@ urlpatterns = [
         'users/<str:userId>/recipes/',
         RecipeViewSet.as_view({'get': 'get_all_user_recipes', 'put': 'create_user_recipe'})
     ),
-    
+    path(
+        'users/<str:userId>/recipePreview/',
+        RecipeViewSet.as_view({ 'get': 'preview_user_item_recipes' })
+    ), 
+    path(
+        'users/<str:userId>/recipePreview/<str:recipeWebId>/',
+        RecipeViewSet.as_view({ 'get': 'get_recipe_info_webApi' })
+    ),  
     # Get, update (PATCH), or delete a specific user recipe
     path(
         'users/<str:userId>/recipes/<str:recipeId>/',
@@ -63,7 +70,7 @@ urlpatterns = [
         ItemViewSet.as_view({ 'get': 'get_recipe_item', 'patch': 'patch_recipe_item', 'delete': 'delete_recipe_item' })
     ),
     path(
-        'users/<str:userId>/items/<str:itemId>/',
+        'users/<str:userId>/items/<str:itemId>/',   
         ItemViewSet.as_view({ 'get': 'get_user_item', 'patch': 'patch_user_item', 'delete': 'delete_user_item' })
     ),
     #ocr urls
@@ -75,5 +82,9 @@ urlpatterns = [
     # path(
     #     'playground/',
     #     PlaygroundViewSet.as_view({ 'post': 'playground' })
-    # )
+    # ),  
+    path(
+        'users/<str:userId>/search_item_by_barcode/<str:barCode>/',
+        ItemViewSet.as_view({ 'get': 'search_item_by_barcode' })
+    ),
 ]
