@@ -6,6 +6,8 @@ from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 from rest_framework import viewsets
+
+from .utils import GetCurrentTimeInSeconds
 from .serializers import ItemCreateSerializer, ItemPatchSerializer, ItemSerializer, RecipeCreateSerializer, RecipePatchSerializer, RecipeSerializer, ShoppingListCreateSerializer, ShoppingListPatchSerializer, ShoppingListSerializer, UserInfoPatchSerializer, UserLoginSerializer, UserRegisterSerializer, UserSerializer, RecipePreviewSerializer, WoolworthItemSerializer
 from .services import UserService, ShoppingListService, RecipeService, ItemService, ApiService
 from rest_framework.parsers import JSONParser
@@ -447,21 +449,28 @@ class RecipeViewSet(viewsets.ViewSet):
         operation_id='get_recipe_info_webApi',
         responses=object
     )
-    def get_recipe_info_webApi(self, request, recipeWebId, userId, itemId):
+    def get_recipe_info_webApi(self, request, userId, recipeWebId):
         if request.method == 'GET':
             try:
-                api_service = ApiService
+                # get recipe info from rapidapi
+                api_service = ApiService()
                 recipe_data = api_service.get_recipe_info_webApi(recipeWebId)
+
+                # validate the recipe response
                 recipe_info = {
                     'name': recipe_data['title'],  # Recipe name comes from the `title` field in JSON
                     'instructions': [recipe_data['instructions']] if isinstance(recipe_data['instructions'], str) else recipe_data['instructions'] or ["None"],
                     'servings': recipe_data['servings'],
                     'diets': recipe_data['diets'],
-                    'summary': recipe_data['summary'] or 'None',
+                    'summary': recipe_data['summary'] if 'summary' in recipe_data and len(recipe_data['summary']) < 512 else 'None',
                     'img': recipe_data['image'],
                     'readyInMinutes': recipe_data['readyInMinutes']
                 }
                 recipe_serializer = RecipeCreateSerializer(data = recipe_info)
+                if not recipe_serializer.is_valid():
+                    return JsonResponse(recipe_serializer.errors, status=500)
+
+                # validate ingredients
                 ingredients = [
                     {
                         'name': ingredient['name'],
@@ -473,15 +482,62 @@ class RecipeViewSet(viewsets.ViewSet):
                     for ingredient in recipe_data['extendedIngredients']
                 ]
                 ingredient_serializer = ItemCreateSerializer(data = ingredients, many = True)
-                if not recipe_serializer.is_valid():
-                    return JsonResponse(recipe_serializer.errors, status=500)
                 if not ingredient_serializer.is_valid():
                     return JsonResponse(ingredient_serializer.errors, status=500)
+                
+                # return the response
                 res_serializer = {
-                    ItemType.list: recipe_serializer.data,        # Serialized recipe details
-                    'ingredients': ingredient_serializer.data  # Serialized ingredients
+                    'recipe': recipe_serializer.data,
+                    'ingredients': ingredient_serializer.data
                 }
                 return JsonResponse(res_serializer, status=200, safe=False)
+            except ValueError as e:
+                return JsonResponse({'error': str(e)}, status=400)
+            except Exception as e:
+                print(e)
+                return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
+        return JsonResponse({'error': 'Invalid request method'}, status=405)
+    
+    @csrf_exempt
+    @extend_schema(
+        operation_id='preview_user_item_recipes',
+        responses=RecipePreviewSerializer(many=True)
+    )
+    def preview_user_item_recipes(self, request, userId):
+        if request.method == 'GET':
+            try:
+                # get all user items
+                item_service = ItemService()
+                items = item_service.get_all_items(ItemType.user, userId)
+
+                # filter for items that expire the soonest
+                items = sorted(items, key=lambda x: x.expiresAt)
+
+                # filter items that have expired already
+                items = [item for item in items if item.expiresAt > GetCurrentTimeInSeconds()]
+
+                # get the names of the items
+                item_names = [item.name for item in items]
+
+                # get the recipe previews, based on the item names
+                api_service = ApiService()
+                Response_recipes = api_service.generate_recipe_preview(item_names, 6) # always return 6 recipes
+                recipe_previews = [
+                    {
+                        'id': recipe['id'],
+                        'name': recipe['title'],
+                        'img': recipe['image']
+                    }
+                    for recipe in Response_recipes
+                ]
+
+                # validate the response
+                res_serializer = RecipePreviewSerializer(data=recipe_previews, many=True)
+                if not res_serializer.is_valid():
+                    return JsonResponse(res_serializer.errors, status=500)
+                
+                # return the response
+                return JsonResponse(res_serializer.data, status=200, safe=False)
             except ValueError as e:
                 return JsonResponse({'error': str(e)}, status=400)
             except Exception as e:
@@ -745,49 +801,6 @@ class ItemViewSet(viewsets.ViewSet):
                 print(e)
                 return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
         return JsonResponse({'error': 'Invalid request method'}, status=405)
-    
-    @csrf_exempt
-    @extend_schema(
-        operation_id='preview_user_item_recipes',
-        responses=RecipePreviewSerializer(many=True)
-    )
-    def preview_user_item_recipes(self, request, userId, itemIds, number):
-        if request.method == 'GET':
-            try:
-                item_id_list = itemIds.split(',')
-                item_names = []
-                item_service = ItemService()
-                for itemId in item_id_list:
-                    try:
-                        # Use ItemService to fetch item information
-                        item_service = ItemService()
-                        item = item_service.get_item_info(ItemType.user, userId, itemId)
-                        item_serializer = ItemSerializer(data=vars(item))
-                        if not item_serializer.is_valid():
-                            return JsonResponse(item_serializer.errors, status=500)
-                        item_names.append(item_serializer.data['name'])
-                    except Exception as e:  
-                        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                api_service = ApiService()
-                Response_recipes = api_service.generate_recipe_preview(item_names, number)
-                recipe_previews = [
-                    {
-                        'id': recipe['id'],
-                        'name': recipe['title'],
-                        'img': recipe['image']
-                    }
-                    for recipe in Response_recipes
-                ]
-                res_serializer = RecipePreviewSerializer(data=recipe_previews, many=True)
-                if not res_serializer.is_valid():
-                    return JsonResponse(res_serializer.errors, status=500)
-                return JsonResponse(res_serializer.data, status=200, safe=False)
-            except ValueError as e:
-                return JsonResponse({'error': str(e)}, status=400)
-            except Exception as e:
-                print(e)
-                return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
-        return JsonResponse({'error': 'Invalid request method'}, status=405)
 
     @csrf_exempt
     @extend_schema(
@@ -1006,34 +1019,6 @@ class ItemViewSet(viewsets.ViewSet):
                 item_service = ItemService()  # Use the ItemService to manage items
                 item_service.delete_item(ItemType.list, recipeId, itemId)  # Delete the specific item
                 return JsonResponse({}, status=204)  # Return a 204 No Content status
-            except ValueError as e:
-                return JsonResponse({'error': str(e)}, status=400)
-            except Exception as e:
-                print(e)
-                return JsonResponse({'error': 'An unexpected error occurred'}, status=500)
-        
-        return JsonResponse({'error': 'Invalid request method'}, status=405)
-
-class WoolworthsViewSet(viewsets.ViewSet):  
-    def search_product_by_name(self, request, userId, name, number):
-        if request.method == 'GET':
-            try:
-                api_service = ApiService()  # Use the ItemService to manage items
-                data = api_service.search_product_by_name(name, number)  # Delete the specific item
-                items_data = [
-                    {
-                        'name': item['product_name'],
-                        'product_brand': item['product_brand'],
-                        'current_price': item['current_price'],
-                        'url': item['url']
-                    }
-                    for item in data['results']
-                ]
-                item_serializer = WoolworthItemSerializer(data = items_data, many=True)
-                if not item_serializer.is_valid():
-                    return JsonResponse(item_serializer.errors, status=500)
-                return JsonResponse(item_serializer.data, status=200, safe=False) 
-
             except ValueError as e:
                 return JsonResponse({'error': str(e)}, status=400)
             except Exception as e:

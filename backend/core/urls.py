@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import path
-from .views import ItemViewSet, RecipeViewSet, ShoppingListViewSet, UserViewSet, WoolworthsViewSet
+from .views import ItemViewSet, RecipeViewSet, ShoppingListViewSet, UserViewSet
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -31,6 +31,10 @@ urlpatterns = [
         'users/<str:userId>/recipes/',
         RecipeViewSet.as_view({'get': 'get_all_user_recipes', 'put': 'create_user_recipe'})
     ),
+    path(
+        'users/<str:userId>/recipePreview/',
+        RecipeViewSet.as_view({ 'get': 'preview_user_item_recipes' })
+    ), 
     path(
         'users/<str:userId>/recipePreview/<str:recipeWebId>/',
         RecipeViewSet.as_view({ 'get': 'get_recipe_info_webApi' })
@@ -70,19 +74,7 @@ urlpatterns = [
         ItemViewSet.as_view({ 'get': 'get_user_item', 'patch': 'patch_user_item', 'delete': 'delete_user_item' })
     ),    
     path(
-        'users/<str:userId>/items/<str:itemIds>/recipePreview/<int:number>/',
-        ItemViewSet.as_view({ 'get': 'preview_user_item_recipes' })
-    ), 
-    path(
         'users/<str:userId>/search_item_by_barcode/<str:barCode>/',
         ItemViewSet.as_view({ 'get': 'search_item_by_barcode' })
-    ), 
-    path(
-        'users/<str:userId>/search_item_by_barcode/<str:barCode>/',
-        ItemViewSet.as_view({ 'get': 'search_item_by_barcode' })
-    ),  
-    path(
-        'users/<str:userId>/search_product_by_name/<str:name>/<int:number>/',
-        WoolworthsViewSet.as_view({ 'get': 'search_product_by_name' })
-    ),  
+    ),
 ]

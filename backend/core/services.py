@@ -192,27 +192,3 @@ class ApiService:
         else:
             # If the request fails, raise an error with the response content
             response.raise_for_status()
-
-    def search_product_by_name(self, name: str, number: int):
-        url = "https://woolworths-products-api.p.rapidapi.com/woolworths/product-search/"
-        
-        # Create query string with dynamic parameters
-        querystring = {
-            "query": name,
-            "size": str(number)  # Convert number to string since size needs to be a string
-        }
-
-        # Set the headers for the request
-        headers = {
-            "x-rapidapi-key": settings.RAPIDAPI_KEY,
-            "x-rapidapi-host": "woolworths-products-api.p.rapidapi.com"
-        }
-
-        # Make the GET request to the API
-        response = requests.get(url, headers=headers, params=querystring)
-
-        # Check for successful response
-        if response.status_code == 200:
-            return response.json()  # Return the response as JSON
-        else:
-            return {"error": "Unable to fetch data", "status_code": response.status_code}
