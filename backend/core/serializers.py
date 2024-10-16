@@ -166,6 +166,10 @@ class RecipePreviewSerializer(serializers.Serializer):
     name = recipe_preview_fields['name']
     img = recipe_preview_fields['img']
 
+class RecipePreviewInfoSerializer(serializers.Serializer):
+    recipe = RecipeCreateSerializer()
+    ingredients = ItemCreateSerializer(many=True)
+
 Woolworth_item_fields = {
     'name': serializers.CharField(max_length=255),         # Product name
     'brand': serializers.CharField(max_length=100), # Brand of the product

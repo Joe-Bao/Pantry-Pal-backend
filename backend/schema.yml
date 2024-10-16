@@ -395,9 +395,7 @@ paths:
           content:
             application/vnd.api+json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Item'
+                $ref: '#/components/schemas/Item'
           description: ''
     put:
       operationId: create_list_item
@@ -526,6 +524,57 @@ paths:
       responses:
         '204':
           description: No response body
+  /users/{userId}/recipePreview/:
+    get:
+      operationId: preview_user_item_recipes
+      parameters:
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.api+json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecipePreview'
+          description: ''
+  /users/{userId}/recipePreview/{recipeWebId}/:
+    get:
+      operationId: get_recipe_info_webApi
+      parameters:
+      - in: path
+        name: recipeWebId
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.api+json:
+              schema:
+                $ref: '#/components/schemas/RecipePreviewInfo'
+          description: ''
   /users/{userId}/recipes/:
     get:
       operationId: get_all_user_recipes
@@ -813,6 +862,35 @@ paths:
       responses:
         '204':
           description: No response body
+  /users/{userId}/search_item_by_barcode/{barCode}/:
+    get:
+      operationId: search_item_by_barcode
+      parameters:
+      - in: path
+        name: barCode
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: userId
+        schema:
+          type: string
+        required: true
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.api+json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Item'
+          description: ''
   /users/login/:
     post:
       operationId: login_user
@@ -952,6 +1030,18 @@ components:
             type: string
         servings:
           type: integer
+        diets:
+          type: array
+          items:
+            type: string
+        summary:
+          type: string
+          maxLength: 512
+        img:
+          type: string
+          format: uri
+        readyInMinutes:
+          type: integer
     PatchedShoppingListPatch:
       type: object
       properties:
@@ -993,6 +1083,18 @@ components:
             type: string
         servings:
           type: integer
+        diets:
+          type: array
+          items:
+            type: string
+        summary:
+          type: string
+          maxLength: 512
+        img:
+          type: string
+          format: uri
+        readyInMinutes:
+          type: integer
         createdAt:
           type: integer
         modifiedAt:
@@ -1001,10 +1103,14 @@ components:
       - PK
       - SK
       - createdAt
+      - diets
+      - img
       - instructions
       - modifiedAt
       - name
+      - readyInMinutes
       - servings
+      - summary
     RecipeCreate:
       type: object
       properties:
@@ -1017,10 +1123,53 @@ components:
             type: string
         servings:
           type: integer
+        diets:
+          type: array
+          items:
+            type: string
+        summary:
+          type: string
+          maxLength: 512
+        img:
+          type: string
+          format: uri
+        readyInMinutes:
+          type: integer
       required:
+      - diets
+      - img
       - instructions
       - name
+      - readyInMinutes
       - servings
+      - summary
+    RecipePreview:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          maxLength: 100
+        img:
+          type: string
+          format: uri
+      required:
+      - id
+      - img
+      - name
+    RecipePreviewInfo:
+      type: object
+      properties:
+        recipe:
+          $ref: '#/components/schemas/RecipeCreate'
+        ingredients:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemCreate'
+      required:
+      - ingredients
+      - recipe
     ShoppingList:
       type: object
       properties:

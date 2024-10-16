@@ -7,7 +7,7 @@ from rest_framework import viewsets
 
 from .utils import GetQuantityFromProductSize, GetUnitFromProductSize, GetCurrentTimeInSeconds
 from .globals import ALLOWED_OCR_CONTENT_TYPES, UNIT_ABBREVIATIONS_PLURAL, ItemType
-from .serializers import ItemCreateSerializer, ItemPatchSerializer, ItemSerializer, RecipeCreateSerializer, RecipePatchSerializer, RecipeSerializer, ShoppingListCreateSerializer, ShoppingListPatchSerializer, ShoppingListSerializer, UserInfoPatchSerializer, UserLoginSerializer, UserRegisterSerializer, UserSerializer, RecipePreviewSerializer
+from .serializers import ItemCreateSerializer, ItemPatchSerializer, ItemSerializer, RecipeCreateSerializer, RecipePatchSerializer, RecipePreviewInfoSerializer, RecipeSerializer, ShoppingListCreateSerializer, ShoppingListPatchSerializer, ShoppingListSerializer, UserInfoPatchSerializer, UserLoginSerializer, UserRegisterSerializer, UserSerializer, RecipePreviewSerializer
 from .services import OCRService, UserService, ShoppingListService, RecipeService, ItemService, WoolworthsService, ApiService
 from .repositories import ItemType
 
@@ -444,7 +444,7 @@ class RecipeViewSet(viewsets.ViewSet):
     @csrf_exempt
     @extend_schema(
         operation_id='get_recipe_info_webApi',
-        responses=object
+        responses=RecipePreviewInfoSerializer
     )
     def get_recipe_info_webApi(self, request, userId, recipeWebId):
         if request.method == 'GET':
