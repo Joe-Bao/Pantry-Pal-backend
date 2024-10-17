@@ -87,14 +87,13 @@ class RecipeService:
     def __init__(self):
         self.recipe_repo = RecipeRepo()
 
-    def create_recipe(self, userid: str, name: str, instructions: List[str], servings: int) -> Recipe:
+    def create_recipe(self, userid: str, name: str, instructions: List[str], servings: int, diets: List[str], summary: str, img: str, readyInMinutes: int) -> Recipe:
         if not userid or not name or not instructions or servings <= 0:
             raise ValueError("All fields are required and servings must be positive")
 
         if self.recipe_repo.recipe_exists(userid, name):
             raise ValueError("Recipe with this name already exists")
-
-        return self.recipe_repo.create(name, instructions, servings)
+        return self.recipe_repo.create(userid, name, instructions, servings, diets, summary, img, readyInMinutes)
     
     def get_recipe_info(self, userid: str, recipeid: str) -> Recipe:
         return self.recipe_repo.get(userid, recipeid)

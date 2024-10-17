@@ -217,7 +217,7 @@ class ShoppingListRepo(GenenericRepo):
                 batch.delete_item(Key={"PK": item["PK"], "SK": item["SK"]})
 
 
-class Recipe(GenenericRepo):
+class Recipe(GenericModel):
     def __init__(
             self,
             PK: str,
@@ -270,12 +270,12 @@ class RecipeRepo(GenenericRepo):
         except TypeError:
             return False
     
-    def create(self, userid: str, name: str, instructions: List[str], servings: int):
+    def create(self, userid: str, name: str, instructions: List[str], servings: int, diets: List[str], summary: str, img: str, readyInMinutes: int):
         id = generate()
         PK = DB_PREFIX_USER + userid
         SK = DB_PREFIX_RECIPE + id
         
-        recipe = Recipe(PK, SK, name, instructions, servings)
+        recipe = Recipe(PK, SK, name, instructions, servings, diets, summary, img, readyInMinutes)
         db_table.put_item(Item=vars(recipe))
         return recipe
     

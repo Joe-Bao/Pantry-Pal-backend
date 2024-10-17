@@ -324,7 +324,7 @@ class RecipeViewSet(viewsets.ViewSet):
                 
                 # Create recipe
                 recipe_service = RecipeService()
-                recipe = recipe_service.create_list(userId, **req_serializer.validated_data)
+                recipe = recipe_service.create_recipe(userId, **req_serializer.validated_data)
 
                # Validate response
                 res_serializer = RecipeSerializer(data=vars(recipe))
@@ -352,7 +352,7 @@ class RecipeViewSet(viewsets.ViewSet):
         if request.method == 'GET':
             try:
                 recipe_service = RecipeService()
-                recipes = recipe_service.get_all_lists(userId)
+                recipes = recipe_service.get_all_recipes(userId)
                 res_serializer = ShoppingListSerializer(data=[vars(r) for r in recipes], many=True)
                 if not res_serializer.is_valid():
                     return JsonResponse(res_serializer.errors, status=500)
