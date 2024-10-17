@@ -1,3 +1,4 @@
+import re
 from typing import List
 import json
 from django.http import JsonResponse
@@ -10,6 +11,7 @@ from .globals import ALLOWED_OCR_CONTENT_TYPES, UNIT_ABBREVIATIONS_PLURAL, ItemT
 from .serializers import ItemCreateSerializer, ItemPatchSerializer, ItemSerializer, RecipeCreateSerializer, RecipePatchSerializer, RecipePreviewInfoSerializer, RecipeSerializer, ShoppingListCreateSerializer, ShoppingListPatchSerializer, ShoppingListSerializer, UserInfoPatchSerializer, UserLoginSerializer, UserRegisterSerializer, UserSerializer, RecipePreviewSerializer
 from .services import OCRService, UserService, ShoppingListService, RecipeService, ItemService, WoolworthsService, ApiService
 from .repositories import ItemType
+import math
 
 class UserViewSet(viewsets.ViewSet):
     @csrf_exempt
@@ -452,7 +454,7 @@ class RecipeViewSet(viewsets.ViewSet):
                 # get recipe info from rapidapi
                 api_service = ApiService()
                 recipe_data = api_service.get_recipe_info_webApi(recipeWebId)
-
+                
                 # validate the recipe response
                 recipe_info = {
                     'name': recipe_data['title'],  # Recipe name comes from the `title` field in JSON
@@ -465,14 +467,16 @@ class RecipeViewSet(viewsets.ViewSet):
                 }
                 recipe_serializer = RecipeCreateSerializer(data = recipe_info)
                 if not recipe_serializer.is_valid():
-                    return JsonResponse(recipe_serializer.errors, status=500)
+                    return JsonResponse(recipe_serializer.errors, status=500, safe=False)
 
                 # validate ingredients
                 ingredients = [
                     {
                         'name': ingredient['name'],
-                        'quantity': ingredient['amount'],
-                        'unit': ingredient['unit'],
+                        'quantity': ingredient['amount'] \
+                            if re.match(r'^\d{0,8}.\d{0,2}$', str(ingredient['amount'])) \
+                            else str(math.floor(float(ingredient['amount'] or 1) * 100) / 100), # round to 2 decimal places
+                        'unit': ingredient['unit'] or 'unit',
                         'price': 0,
                         'expiresAt': 0,
                     }
@@ -480,7 +484,7 @@ class RecipeViewSet(viewsets.ViewSet):
                 ]
                 ingredient_serializer = ItemCreateSerializer(data = ingredients, many = True)
                 if not ingredient_serializer.is_valid():
-                    return JsonResponse(ingredient_serializer.errors, status=500)
+                    return JsonResponse(ingredient_serializer.errors, status=500, safe=False)
                 
                 # return the response
                 res_serializer = {
@@ -500,13 +504,19 @@ class RecipeViewSet(viewsets.ViewSet):
         operation_id='preview_user_item_recipes',
         responses=RecipePreviewSerializer(many=True)
     )
-    def preview_user_item_recipes(self, request, userId, diets=None):
+    def preview_user_item_recipes(self, request, userId):
         if request.method == 'GET':
             try:
+                # get user info
+                user_service = UserService()
+                user = user_service.get_user(userId)
+                if not user:
+                    return JsonResponse({'error': 'User not found'}, status=400)
+                
+                # get user diets
+                diets = user.diets
+
                 # get all user items
-                diets = request.query_params.get('diets', '')
-                if diets:
-                        diets_list = diets.split(',')
                 item_service = ItemService()
                 items = item_service.get_all_items(ItemType.user, userId)
 
@@ -543,7 +553,7 @@ class RecipeViewSet(viewsets.ViewSet):
                         recipe_diets = recipe_info.get('diets', [])
                         
                         # Check if all diets in diets_list match with the recipe's diets
-                        if roughMatchDiets(diets_list, recipe_diets):
+                        if roughMatchDiets(diets, recipe_diets):
                             fit_recipes.append(recipe)
                         # Stop when we have 6 matching recipes
                         if len(fit_recipes) >= 6:
