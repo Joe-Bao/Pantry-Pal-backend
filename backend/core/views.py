@@ -324,7 +324,7 @@ class RecipeViewSet(viewsets.ViewSet):
                 
                 # Create recipe
                 recipe_service = RecipeService()
-                recipe = recipe_service.create_list(userId, **req_serializer.validated_data)
+                recipe = recipe_service.create_recipe(userId, **req_serializer.validated_data)
 
                # Validate response
                 res_serializer = RecipeSerializer(data=vars(recipe))
