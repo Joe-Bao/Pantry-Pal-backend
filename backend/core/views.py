@@ -536,7 +536,6 @@ class RecipeViewSet(viewsets.ViewSet):
                     fit_recipes = []
                     for recipe in recipe_previews:
                         recipe_id = recipe['id']
-                        print(recipe)
                         # Fetch detailed info using the external API service
                         recipe_info = api_service.get_recipe_info_webApi(recipe_id)
                         
