@@ -902,7 +902,7 @@ class ItemViewSet(viewsets.ViewSet):
                 
                 # Update item
                 item_service = ItemService()
-                item = item_service.update_item(ItemType.user, userId, itemId, **req_serializer.validated_data)
+                item = item_service.update_item(ItemType.user, userId, itemId, req_serializer.validated_data)
 
                 # Validate response
                 res_serializer = ItemSerializer(data=vars(item))
@@ -940,7 +940,7 @@ class ItemViewSet(viewsets.ViewSet):
                 
                 # Update item
                 item_service = ItemService()
-                item = item_service.update_item(ItemType.list, listId, itemId, **req_serializer.validated_data)
+                item = item_service.update_item(ItemType.list, listId, itemId, req_serializer.validated_data)
 
                 # Validate response
                 res_serializer = ItemSerializer(data=vars(item))
@@ -978,7 +978,7 @@ class ItemViewSet(viewsets.ViewSet):
                 
                 # Update item
                 item_service = ItemService()
-                item = item_service.update_item(ItemType.list, recipeId, itemId, **req_serializer.validated_data)
+                item = item_service.update_item(ItemType.list, recipeId, itemId, req_serializer.validated_data)
 
                 # Validate response
                 res_serializer = ItemSerializer(data=vars(item))
