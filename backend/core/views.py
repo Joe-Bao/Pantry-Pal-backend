@@ -712,7 +712,7 @@ class ItemViewSet(viewsets.ViewSet):
     @csrf_exempt
     @extend_schema(
         operation_id='search_item_by_barcode',
-        responses=ItemSerializer(many=True)
+        responses=ItemSerializer
     )
     def search_item_by_barcode(self, request, userId, barCode):
         if request.method == 'GET':

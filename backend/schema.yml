@@ -887,9 +887,7 @@ paths:
           content:
             application/vnd.api+json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Item'
+                $ref: '#/components/schemas/Item'
           description: ''
   /users/login/:
     post:
