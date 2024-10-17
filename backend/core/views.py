@@ -978,7 +978,7 @@ class ItemViewSet(viewsets.ViewSet):
                 
                 # Update item
                 item_service = ItemService()
-                item = item_service.update_item(ItemType.list, recipeId, itemId, req_serializer.validated_data)
+                item = item_service.update_item(ItemType.recipe, recipeId, itemId, req_serializer.validated_data)
 
                 # Validate response
                 res_serializer = ItemSerializer(data=vars(item))
@@ -1044,7 +1044,7 @@ class ItemViewSet(viewsets.ViewSet):
         if request.method == 'DELETE':
             try:
                 item_service = ItemService()  # Use the ItemService to manage items
-                item_service.delete_item(ItemType.list, recipeId, itemId)  # Delete the specific item
+                item_service.delete_item(ItemType.recipe, recipeId, itemId)  # Delete the specific item
                 return JsonResponse({}, status=204)  # Return a 204 No Content status
             except ValueError as e:
                 return JsonResponse({'error': str(e)}, status=400)

@@ -128,13 +128,13 @@ class ItemService:
         return self.item_repo.get(type, pkid, itemid)
 
 
-    def update_item(self,type: ItemType, pkId: str, itemId: str, data: dict) -> Item:
+    def update_item(self, type: ItemType, pkId: str, itemId: str, data: dict) -> Item:
         # Validate that the item exists
         if not self.item_repo.item_exists(type, pkId, itemId):
             raise ValueError("Item not found")
 
         # Update the item using the repository method
-        return self.item_repo.update(ItemType, pkId, itemId, data)
+        return self.item_repo.update(type, pkId, itemId, data)
     
     def delete_item(self, type: ItemType, pkId: str, itemid: str):
         self.item_repo.delete(type, pkId, itemid)

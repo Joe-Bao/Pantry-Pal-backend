@@ -381,8 +381,8 @@ class ItemRepo(GenenericRepo):
                 batch.put_item(Item=vars(item))
         return ret_val
 
-    def update(self, ItemType: ItemType, pkid: str, skid: str, data: dict) -> Item:
-        PK = ItemTypePrefix(ItemType) + pkid
+    def update(self, type: ItemType, pkid: str, skid: str, data: dict) -> Item:
+        PK = ItemTypePrefix(type) + pkid
         SK = DB_PREFIX_ITEM + skid
 
         now = GetCurrentTimeInSeconds()
