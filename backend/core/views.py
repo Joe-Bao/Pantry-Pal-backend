@@ -1,7 +1,11 @@
 import re
 from typing import List
 import json
+<<<<<<< HEAD
 from django.http import JsonResponse, HttpResponse
+=======
+from django.http import HttpResponse, JsonResponse
+>>>>>>> f158da7e63581942c9ed84a48433d6e3c9135eb1
 from django.views.decorators.csrf import csrf_exempt
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets
@@ -1026,7 +1030,11 @@ class ItemViewSet(viewsets.ViewSet):
             try:
                 item_service = ItemService()  # Use the ItemService to manage items
                 item_service.delete_item(ItemType.list, listId, itemId)  # Delete the specific item
+<<<<<<< HEAD
                 return HttpResponse(status=204)
+=======
+                return HttpResponse(status=204)  # Return a 204 No Content status
+>>>>>>> f158da7e63581942c9ed84a48433d6e3c9135eb1
             except ValueError as e:
                 return JsonResponse({'error': str(e)}, status=400)
             except Exception as e:
