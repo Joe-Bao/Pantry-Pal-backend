@@ -1,7 +1,7 @@
 import re
 from typing import List
 import json
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets
@@ -278,7 +278,7 @@ class ShoppingListViewSet(viewsets.ViewSet):
             try:
                 list_service = ShoppingListService()
                 list_service.delete_all_lists(userId)
-                return JsonResponse({}, status=204)
+                return HttpResponse(status=204)
             except ValueError as e:
                 return JsonResponse({'error': str(e)}, status=400)
             except Exception as e:
@@ -296,7 +296,7 @@ class ShoppingListViewSet(viewsets.ViewSet):
             try:
                 list_service = ShoppingListService()
                 list_service.delete_list(userId, listId)
-                return JsonResponse({}, status=204)
+                return HttpResponse(status=204)
             except ValueError as e:
                 return JsonResponse({'error': str(e)}, status=400)
             except Exception as e:
@@ -435,7 +435,7 @@ class RecipeViewSet(viewsets.ViewSet):
             try:
                 recipe_service = RecipeService()  # Use the RecipeService to manage recipes
                 recipe_service.delete_recipe(userId, recipeId)  # Delete the specific recipe
-                return JsonResponse({}, status=204)  # Return a 204 No Content status
+                return HttpResponse(status=204)  # Return a 204 No Content status
             except ValueError as e:
                 return JsonResponse({'error': str(e)}, status=400)
             except Exception as e:
@@ -1007,7 +1007,7 @@ class ItemViewSet(viewsets.ViewSet):
             try:
                 item_service = ItemService()  # Use the ItemService to manage items
                 item_service.delete_item(ItemType.user, userId, itemId)  # Delete the specific item
-                return JsonResponse({}, status=204)  # Return a 204 No Content status
+                return HttpResponse(status=204)  # Return a 204 No Content status
             except ValueError as e:
                 return JsonResponse({'error': str(e)}, status=400)
             except Exception as e:
@@ -1026,7 +1026,7 @@ class ItemViewSet(viewsets.ViewSet):
             try:
                 item_service = ItemService()  # Use the ItemService to manage items
                 item_service.delete_item(ItemType.list, listId, itemId)  # Delete the specific item
-                return JsonResponse({}, status=204)  # Return a 204 No Content status
+                return HttpResponse(status=204)
             except ValueError as e:
                 return JsonResponse({'error': str(e)}, status=400)
             except Exception as e:
@@ -1045,7 +1045,7 @@ class ItemViewSet(viewsets.ViewSet):
             try:
                 item_service = ItemService()  # Use the ItemService to manage items
                 item_service.delete_item(ItemType.recipe, recipeId, itemId)  # Delete the specific item
-                return JsonResponse({}, status=204)  # Return a 204 No Content status
+                return HttpResponse(status=204)
             except ValueError as e:
                 return JsonResponse({'error': str(e)}, status=400)
             except Exception as e:
