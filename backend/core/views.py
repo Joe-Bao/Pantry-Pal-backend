@@ -1,11 +1,7 @@
 import re
 from typing import List
 import json
-<<<<<<< HEAD
 from django.http import JsonResponse, HttpResponse
-=======
-from django.http import HttpResponse, JsonResponse
->>>>>>> f158da7e63581942c9ed84a48433d6e3c9135eb1
 from django.views.decorators.csrf import csrf_exempt
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets
