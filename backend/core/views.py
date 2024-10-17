@@ -5,7 +5,7 @@ from django.views.decorators.csrf import csrf_exempt
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets
 
-from .utils import GetQuantityFromProductSize, GetUnitFromProductSize, GetCurrentTimeInSeconds
+from .utils import GetQuantityFromProductSize, GetUnitFromProductSize, GetCurrentTimeInSeconds, roughMatchDiets
 from .globals import ALLOWED_OCR_CONTENT_TYPES, UNIT_ABBREVIATIONS_PLURAL, ItemType
 from .serializers import ItemCreateSerializer, ItemPatchSerializer, ItemSerializer, RecipeCreateSerializer, RecipePatchSerializer, RecipePreviewInfoSerializer, RecipeSerializer, ShoppingListCreateSerializer, ShoppingListPatchSerializer, ShoppingListSerializer, UserInfoPatchSerializer, UserLoginSerializer, UserRegisterSerializer, UserSerializer, RecipePreviewSerializer
 from .services import OCRService, UserService, ShoppingListService, RecipeService, ItemService, WoolworthsService, ApiService
@@ -500,10 +500,13 @@ class RecipeViewSet(viewsets.ViewSet):
         operation_id='preview_user_item_recipes',
         responses=RecipePreviewSerializer(many=True)
     )
-    def preview_user_item_recipes(self, request, userId):
+    def preview_user_item_recipes(self, request, userId, diets=None):
         if request.method == 'GET':
             try:
                 # get all user items
+                diets = request.query_params.get('diets', '')
+                if diets:
+                        diets_list = diets.split(',')
                 item_service = ItemService()
                 items = item_service.get_all_items(ItemType.user, userId)
 
@@ -512,13 +515,14 @@ class RecipeViewSet(viewsets.ViewSet):
 
                 # filter items that have expired already
                 items = [item for item in items if item.expiresAt > GetCurrentTimeInSeconds()]
-
                 # get the names of the items
                 item_names = [item.name for item in items]
-
                 # get the recipe previews, based on the item names
                 api_service = ApiService()
-                Response_recipes = api_service.generate_recipe_preview(item_names, 6) # always return 6 recipes
+                if diets:
+                    Response_recipes = api_service.generate_recipe_preview(item_names, 15) # always return 15 recipes
+                else:
+                    Response_recipes = api_service.generate_recipe_preview(item_names, 6) # always return 6 recipes
                 recipe_previews = [
                     {
                         'id': recipe['id'],
@@ -527,12 +531,29 @@ class RecipeViewSet(viewsets.ViewSet):
                     }
                     for recipe in Response_recipes
                 ]
-
-                # validate the response
-                res_serializer = RecipePreviewSerializer(data=recipe_previews, many=True)
+                # validate the response      
+                if diets:  
+                    fit_recipes = []
+                    for recipe in recipe_previews:
+                        recipe_id = recipe['id']
+                        print(recipe)
+                        # Fetch detailed info using the external API service
+                        recipe_info = api_service.get_recipe_info_webApi(recipe_id)
+                        
+                        # Extract the diets property from the API response (it is a string list)
+                        recipe_diets = recipe_info.get('diets', [])
+                        
+                        # Check if all diets in diets_list match with the recipe's diets
+                        if roughMatchDiets(diets_list, recipe_diets):
+                            fit_recipes.append(recipe)
+                        # Stop when we have 6 matching recipes
+                        if len(fit_recipes) >= 6:
+                            break
+                    res_serializer = RecipePreviewSerializer(data=fit_recipes, many=True)
+                else:
+                    res_serializer = RecipePreviewSerializer(data=recipe_previews, many=True)
                 if not res_serializer.is_valid():
                     return JsonResponse(res_serializer.errors, status=500)
-                
                 # return the response
                 return JsonResponse(res_serializer.data, status=200, safe=False)
             except ValueError as e:
@@ -702,8 +723,8 @@ class ItemViewSet(viewsets.ViewSet):
                 item_data = api_service.search_by_barcode_woolworths(barCode)  # Fetch all items for the user
                 item_info = {
                     'name': item_data['product_name'],
-                    'quantity': 1,
-                    'unit': item_data['product_size'],
+                    'quantity': GetQuantityFromProductSize(item_data['product_size']),
+                    'unit': GetUnitFromProductSize(item_data['product_size']),
                     'price': float(item_data['current_price']),
                     'expiresAt': 0
                 }

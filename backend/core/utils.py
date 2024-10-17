@@ -27,4 +27,21 @@ def GetUnitFromProductSize(str: str) -> str:
     else:
         return 'unit'
 
-    
+def roughMatchDiets(diets_list, recipe_diets):
+    # Convert both lists to lowercase for case-insensitive comparison
+    diets_list_lower = [diet.lower() for diet in diets_list]
+    recipe_diets_lower = [diet.lower() for diet in recipe_diets]
+
+    # Check if each diet in diets_list is roughly matched in the recipe_diets
+    for diet in diets_list_lower:
+        # Use regex to allow rough matching (e.g., partial matches)
+        match_found = False
+        for recipe_diet in recipe_diets_lower:
+            if re.search(diet, recipe_diet):
+                match_found = True
+                break
+        
+        # If one diet in diets_list is not found, return False
+        if not match_found:
+            return False
+    return True
